@@ -8,21 +8,26 @@ import { Search, Eye, User, CheckCircle2, Mail, Undo2, Loader2 } from "lucide-re
 import { toast } from "sonner";
 
 import { BrandTabs } from "@/components/brand-tabs";
+import { FilterChips } from "@/components/filter-chips";
 import { RefundOrderDialog } from "@/components/modals/refund-order-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEncargados } from "@/hooks/use-encargados";
 import { useOrders, useSendOrderEmail, useUpdateOrderStatus } from "@/hooks/use-orders";
+import { useCatalogProducts } from "@/hooks/use-products-catalog";
 import {
   ORDER_STATUS_META,
   formatOrderPrice,
   itemsSummary,
   relativeDate,
   type Order,
+  type OrderItem,
   type OrderStatus,
 } from "@/lib/services/orders-service";
+import { GRANT_TYPES, GRANT_TYPE_LABEL, type Product } from "@/lib/services/products-service";
 
 import { OrderDetailSheet } from "./order-detail-sheet";
 import { OrderStatusBadge, PaymentBadge } from "./order-status-badge";
@@ -47,20 +52,62 @@ const STATUS_TABS: { id: OrderStatus | "all"; countKey: string }[] = [
   { id: "cancelled", countKey: "cancelled" },
 ];
 
+// ─── Filtro «Categoría» (del producto) ───────────────────────────────────────
+// La categoría visible del catálogo es el `grant_type` del producto (Curso,
+// Programa, Libro, Pack, Biblioteca); lo que no tiene concesión cae en «Otros».
+const CATEGORY_OTHER = "otros";
+
+const CATEGORY_OPTIONS = [
+  ...GRANT_TYPES.map((g) => ({ id: g as string, label: GRANT_TYPE_LABEL[g] })),
+  { id: CATEGORY_OTHER, label: "Otros" },
+];
+
+/** Categoría de una línea del pedido: producto del catálogo o, si no, su `product_type`. */
+function itemCategory(item: OrderItem, productsById: Map<string, Product>): string {
+  const product = item.product_id ? productsById.get(String(item.product_id)) : undefined;
+  if (product?.grantType) return product.grantType;
+  const t = String(item.product_type ?? "").toLowerCase();
+  if ((GRANT_TYPES as readonly string[]).includes(t)) return t;
+  return CATEGORY_OTHER;
+}
+
 export function OrdersView() {
   const [tab, setTab] = useState<OrderStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [refundOrder, setRefundOrder] = useState<Order | null>(null);
+  // Filtros multi-selección (pastillas). Vacío = «Todos».
+  const [categories, setCategories] = useState<string[]>([]);
+  const [encargadosSel, setEncargadosSel] = useState<string[]>([]);
 
   const debouncedSearch = useDebounce(search, 350);
   const { data, isLoading } = useOrders({ status: tab, search: debouncedSearch });
   const updateStatus = useUpdateOrderStatus();
   const sendEmail = useSendOrderEmail();
 
+  // Catálogo (para resolver la categoría de cada línea) y encargados (staff).
+  const { data: products = [] } = useCatalogProducts();
+  const productsById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
+  const { options: encargadoOptions, matchesUser } = useEncargados();
+
   const orders = data?.orders ?? [];
   const counts = data?.counts ?? {};
+
+  // El GET /admin-panel/orders (QueryOrdersDTO, forbidNonWhitelisted) SOLO
+  // acepta status/search/limit, así que Categoría y Encargado se filtran EN
+  // CLIENTE sobre la página cargada (limit=200), igual que hace Leads con
+  // «Asignado».
+  const visibleOrders = useMemo(() => {
+    let out = orders;
+    if (categories.length > 0) {
+      out = out.filter((o) => o.items.some((i) => categories.includes(itemCategory(i, productsById))));
+    }
+    if (encargadosSel.length > 0) {
+      out = out.filter((o) => matchesUser(o.userId, encargadosSel));
+    }
+    return out;
+  }, [orders, categories, encargadosSel, productsById, matchesUser]);
 
   // Mantener el pedido abierto sincronizado con los datos frescos.
   const openOrder = selected ? (orders.find((o) => o.id === selected.id) ?? selected) : null;
@@ -110,6 +157,17 @@ export function OrdersView() {
         </div>
       </div>
 
+      {/* Pastillas multi-selección: varias categorías/encargados a la vez; «Todos» limpia. */}
+      <div className="flex flex-col gap-2">
+        <FilterChips label="Categoría" options={CATEGORY_OPTIONS} selected={categories} onChange={setCategories} />
+        <FilterChips
+          label="Encargado"
+          options={encargadoOptions}
+          selected={encargadosSel}
+          onChange={setEncargadosSel}
+        />
+      </div>
+
       <BrandTabs tabs={tabs} active={tab} onChange={(id) => setTab(id as OrderStatus | "all")} />
 
       {isLoading ? (
@@ -136,14 +194,14 @@ export function OrdersView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.length === 0 ? (
+                  {visibleOrders.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
                         No hay pedidos en esta vista.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    orders.map((o) => {
+                    visibleOrders.map((o) => {
                       const struck = o.status === "refunded" || o.status === "cancelled";
                       const canComplete = o.status === "pending" || o.status === "processing";
                       // Estado por fila: solo la fila mutada muestra spinner / se deshabilita.
