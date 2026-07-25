@@ -17,7 +17,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cy
 const REQUEST_TIMEOUT = 12000;
 
 // Encender cuando el backend exponga admin-panel/users/:id/notes.
-export const CLIENT_NOTES_API_READY = false;
+export const CLIENT_NOTES_API_READY = true;
 
 export interface StaffNote {
   id: string;

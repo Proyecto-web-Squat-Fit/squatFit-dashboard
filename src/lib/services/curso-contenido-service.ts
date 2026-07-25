@@ -14,7 +14,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cy
 const REQUEST_TIMEOUT = 12000;
 
 // Encender cuando el backend (features-lote-7) esté desplegado en prod.
-export const COURSE_CONTENT_API_READY = false;
+export const COURSE_CONTENT_API_READY = true;
 
 // ============================================================================
 // Tipos (espejo del contrato del backend)
