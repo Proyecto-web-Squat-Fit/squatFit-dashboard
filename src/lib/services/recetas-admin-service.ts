@@ -17,7 +17,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cy
 const REQUEST_TIMEOUT = 12000;
 
 // Encender cuando el backend exponga admin-panel/recipes/* en prod.
-export const RECIPES_API_READY = false;
+export const RECIPES_API_READY = true;
 
 // ============================================================================
 // Tipos (contrato propuesto para el backend — ver INFORME-FASE-17)
