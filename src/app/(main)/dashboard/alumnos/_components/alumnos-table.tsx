@@ -9,15 +9,36 @@ import { Search } from "lucide-react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
+import { FilterChips } from "@/components/filter-chips";
 import { EditUserModal } from "@/components/modals/edit-user-modal";
 import { GrantProductDialog } from "@/components/modals/grant-product-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAlumnos } from "@/hooks/use-alumnos";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
+import { useEncargados } from "@/hooks/use-encargados";
 
 import { getAlumnosColumns } from "./columns.alumnos";
 import { AlumnoUI } from "./schema";
+
+// Etiquetas legibles de los roles/segmentos conocidos (Doc 0); el resto se
+// muestra capitalizado tal y como llega del backend.
+const ROLE_LABEL: Record<string, string> = {
+  user: "Usuario",
+  admin: "Admin",
+  coach: "Coach",
+  lead: "Lead",
+  miembro: "Miembro",
+  alumno: "Alumno",
+  lector: "Lector",
+  suscrito: "Suscrito",
+  cocinilla: "Cocinilla",
+};
+
+function roleLabel(role: string): string {
+  const key = role.toLowerCase();
+  return ROLE_LABEL[key] ?? role.charAt(0).toUpperCase() + role.slice(1);
+}
 
 export function AlumnosTable() {
   const router = useRouter();
@@ -26,9 +47,15 @@ export function AlumnosTable() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [grantingUser, setGrantingUser] = useState<AlumnoUI | null>(null);
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
+  // Filtros multi-selección (pastillas). Vacío = «Todos».
+  const [rolesSel, setRolesSel] = useState<string[]>([]);
+  const [encargadosSel, setEncargadosSel] = useState<string[]>([]);
 
   // Obtener alumnos del API
   const { data: alumnosData, isLoading, error } = useAlumnos({ page: 1, limit: 1000 });
+
+  // Encargado (staff asignado vía asesorías) — mismo filtro que en Pedidos.
+  const { options: encargadoOptions, matchesUser } = useEncargados();
 
   // Handlers del modal
   const handleEditUser = (alumno: AlumnoUI) => {
@@ -58,6 +85,21 @@ export function AlumnosTable() {
     }));
   }, [alumnosData]);
 
+  // Opciones de «Categoría» (rol/segmento) según los datos cargados.
+  const roleOptions = useMemo(() => {
+    const roles = [...new Set(alumnos.map((a) => (a.role ?? "").toLowerCase()).filter(Boolean))].sort();
+    return roles.map((r) => ({ id: r, label: roleLabel(r) }));
+  }, [alumnos]);
+
+  // El GET /admin-panel/users solo acepta UN `role`/`status`, así que las
+  // pastillas multi-selección filtran EN CLIENTE sobre la página cargada.
+  const visibleAlumnos = useMemo(() => {
+    let out = alumnos;
+    if (rolesSel.length > 0) out = out.filter((a) => rolesSel.includes((a.role ?? "").toLowerCase()));
+    if (encargadosSel.length > 0) out = out.filter((a) => matchesUser(a.id, encargadosSel));
+    return out;
+  }, [alumnos, rolesSel, encargadosSel, matchesUser]);
+
   // Generar columnas con handlers
   const columns = useMemo(
     () =>
@@ -76,7 +118,7 @@ export function AlumnosTable() {
   );
 
   const table = useDataTableInstance({
-    data: alumnos,
+    data: visibleAlumnos,
     columns,
     getRowId: (row) => row.id,
     state: {
@@ -104,6 +146,17 @@ export function AlumnosTable() {
             />
           </div>
           <DataTableViewOptions table={table} />
+        </div>
+
+        {/* Pastillas multi-selección: varias categorías/encargados a la vez; «Todos» limpia. */}
+        <div className="flex flex-col gap-2">
+          <FilterChips label="Categoría" options={roleOptions} selected={rolesSel} onChange={setRolesSel} />
+          <FilterChips
+            label="Encargado"
+            options={encargadoOptions}
+            selected={encargadosSel}
+            onChange={setEncargadosSel}
+          />
         </div>
 
         {/* Manejo de estados de carga y error */}
