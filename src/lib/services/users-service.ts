@@ -37,6 +37,8 @@ export interface UpdateUserDto {
   birth?: string;
   description?: string;
   profile_picture?: string;
+  /** Rol formal del staff (página Equipo): Nutri, Trainer, Psicóloga, Soporte, Ventas, Admin */
+  staff_role?: string;
 }
 
 // Respuesta real del API de lista de usuarios

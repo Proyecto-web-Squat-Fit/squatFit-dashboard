@@ -66,7 +66,7 @@ export default function Filtros() {
             className={`flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-all duration-150 ${
               activeFilter === filter.id
                 ? "bg-primary text-white shadow-sm"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                : "text-foreground bg-muted hover:bg-muted dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
             }`}
             onClick={() => setActiveFilter(filter.id)}
           >
@@ -76,7 +76,7 @@ export default function Filtros() {
                 className={`rounded-full px-1.5 py-0.5 text-xs ${
                   activeFilter === filter.id
                     ? "bg-white/20 text-white"
-                    : "bg-gray-300 text-gray-600 dark:bg-gray-600 dark:text-gray-300"
+                    : "text-foreground bg-muted dark:bg-gray-600 dark:text-gray-300"
                 }`}
               >
                 {filter.count > 99 ? "99+" : filter.count}

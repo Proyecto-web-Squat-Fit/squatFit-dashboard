@@ -35,6 +35,8 @@ export interface Pack {
   price: number;
   versions: PackVersion[];
   versionsCount?: number;
+  /** false = pack desactivado (no vendible) */
+  isActive: boolean;
 }
 
 export interface CreatePackDto {
@@ -48,6 +50,7 @@ export interface UpdatePackDto {
   name?: string;
   description?: string;
   price?: string;
+  is_active?: boolean;
 }
 
 // ============================================================================
@@ -104,6 +107,7 @@ export class PacksService {
       price: parseFloat(api.price) || 0,
       versions,
       versionsCount: versions.length,
+      isActive: api.is_active !== false,
     };
   }
 

@@ -43,14 +43,14 @@
 
 :root {
   --radius: 0.625rem;
-  --card: #fff4eb;
-  --card-foreground: #ff6a00;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.32 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.32 0 0);
-  --primary: #ff6a00;
-  --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 264.54);
-  --secondary-foreground: oklch(0.45 0.03 256.8);
+  --primary: oklch(0.68 0.2 42); /* naranja de marca #FF690B */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.015 285); /* índigo muy claro (fondos secundarios) */
+  --secondary-foreground: oklch(0.38 0.13 274); /* índigo de marca #363C98 */
   --muted: oklch(0.98 0 247.84);
   --muted-foreground: #6c727e;
   --accent: #d7e3ee;
@@ -58,33 +58,33 @@
   --destructive: oklch(0.64 0.21 25.33);
   --border: oklch(0.9 0.01 247.88);
   --input: oklch(0.97 0 264.54);
-  --ring: #ff6a00;
-  --chart-1: #ff6a00;
+  --ring: oklch(0.64 0.17 36.44);
+  --chart-1: oklch(0.72 0.06 248.68);
   --chart-2: oklch(0.79 0.09 35.96);
   --chart-3: #597da9;
   --chart-4: oklch(0.5 0.08 259.49);
   --chart-5: oklch(0.42 0.1 264.03);
-  --sidebar: #e9e5fc;
-  --sidebar-foreground: #2d1b69;
-  --sidebar-primary: #ff6a00;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #dcd5f9;
-  --sidebar-accent-foreground: #2d1b69;
-  --sidebar-border: #dcd5f9;
-  --sidebar-ring: #ff6a00;
-  --background: #ffffff;
-  --foreground: #0f172a;
+  --sidebar: #ebeaf2; /* azul/lavanda suave del diseño */
+  --sidebar-foreground: oklch(0.38 0.13 274); /* índigo de marca */
+  --sidebar-primary: oklch(0.68 0.2 42); /* naranja (item activo) */
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.91 0.03 286); /* hover lavanda algo más marcado */
+  --sidebar-accent-foreground: oklch(0.38 0.13 274);
+  --sidebar-border: oklch(0.9 0.02 286);
+  --sidebar-ring: oklch(0.68 0.2 42);
+  --background: oklch(1 0 0); /* blanco: fuera el gris */
+  --foreground: oklch(0.32 0 0);
 }
 
 .dark {
-  --background: #020617;
-  --foreground: #f8fafc;
-  --card: #2a1708;
-  --card-foreground: #ff8533;
+  --background: oklch(0.26 0.03 262.67);
+  --foreground: oklch(0.92 0 0);
+  --card: oklch(0.31 0.03 268.64);
+  --card-foreground: oklch(0.92 0 0);
   --popover: oklch(0.29 0.02 268.4);
   --popover-foreground: oklch(0.92 0 0);
-  --primary: #ff8533;
-  --primary-foreground: #ffffff;
+  --primary: oklch(0.64 0.17 36.44);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.31 0.03 266.71);
   --secondary-foreground: oklch(0.92 0 0);
   --muted: oklch(0.31 0.03 266.71);
@@ -94,20 +94,20 @@
   --destructive: oklch(0.64 0.21 25.33);
   --border: oklch(0.38 0.03 269.73);
   --input: oklch(0.38 0.03 269.73);
-  --ring: #ff8533;
-  --chart-1: #ff8533;
+  --ring: oklch(0.64 0.17 36.44);
+  --chart-1: oklch(0.72 0.06 248.68);
   --chart-2: oklch(0.77 0.09 34.19);
   --chart-3: oklch(0.58 0.08 254.16);
   --chart-4: oklch(0.5 0.08 259.49);
   --chart-5: oklch(0.42 0.1 264.03);
-  --sidebar: #1f1635;
-  --sidebar-foreground: #e9e5fc;
-  --sidebar-primary: #ff8533;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2d1b69;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2d1b69;
-  --sidebar-ring: #ff8533;
+  --sidebar: oklch(0.31 0.03 267.74);
+  --sidebar-foreground: oklch(0.92 0 0);
+  --sidebar-primary: oklch(0.64 0.17 36.44);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.34 0.06 267.59);
+  --sidebar-accent-foreground: oklch(0.88 0.06 254.13);
+  --sidebar-border: oklch(0.38 0.03 269.73);
+  --sidebar-ring: oklch(0.64 0.17 36.44);
 }
 
 @layer base {
@@ -146,7 +146,144 @@
   }
 }
 
-/* Oculta la barra de scroll (submenú de marca y carruseles horizontales). */
+/* Tabla del diseño de marca: cabecera lavanda con texto índigo, filas con hover
+   melocotón muy suave y separadores tenues. Reutilizable en cualquier tabla
+   (catálogo, pedidos, etc.): envolver el contenedor de la tabla con `sqf-table`. */
+.sqf-table table thead tr {
+  background-color: #ebeaf2;
+}
+.sqf-table table thead th {
+  color: #363c98;
+  font-weight: 600;
+}
+.sqf-table table tbody tr {
+  transition: background-color 0.15s;
+}
+.sqf-table table tbody tr:hover {
+  background-color: #fff7f2;
+}
+
+/* Tarjeta de métrica del diseño de María: fondo naranja suave (#FFF0E7),
+   sin borde y con la cifra principal en naranja. Reutilizable en otras
+   pestañas: basta con añadir la clase `sqf-metric-card` a la <Card>. */
+.sqf-metric-card {
+  background-color: #fff0e7 !important;
+  border-color: transparent !important;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+/* Hover: se "hunde" ligeramente hacia abajo (al revés que las KPI, que suben)
+   con una sombra inferior muy sutil, como de estar presionada. */
+.sqf-metric-card:hover {
+  transform: translateY(2px);
+  box-shadow: 0 6px 10px -4px rgb(0 0 0 / 0.12);
+}
+.sqf-metric-card .text-2xl {
+  color: var(--primary);
+}
+
+/* Badges/pills de estado en paleta de marca. Sustituyen a los antiguos
+   green/blue/purple/red/amber-50/200/700 (fuera de paleta). Definidos fuera de
+   @layer para ganar a las utilidades de Tailwind del variant "outline". */
+.sqf-badge-green {
+  background-color: #e4f0ea !important;
+  color: #2f855a !important;
+  border-color: #2f855a !important;
+}
+.sqf-badge-indigo {
+  background-color: #e7e6ff !important;
+  color: #363c98 !important;
+  border-color: #363c98 !important;
+}
+.sqf-badge-orange {
+  /* naranja suave (más oscuro que el peach de las tarjetas, para contrastar
+     sin quedar blanco) */
+  background-color: #ffdcc6 !important;
+  color: #ff690b !important;
+  border-color: #ff690b !important;
+}
+.sqf-badge-wine {
+  background-color: #e8d8de !important;
+  color: #9f4e63 !important;
+  border-color: #9f4e63 !important;
+}
+.sqf-badge-muted {
+  background-color: #f1f0f6 !important;
+  color: #6c727e !important;
+  border-color: #c2c0fc !important;
+}
+
+/* Tarjeta KPI del home (blanca, sombra, hover sutil y línea superior de color).
+   El color de la línea y del icono se pasan por estilo en línea (son por
+   tarjeta). Reutilizable: añade `sqf-kpi-card` a la <Card>. */
+.sqf-kpi-card {
+  position: relative;
+  overflow: hidden;
+  border: 0 !important;
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+.sqf-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* ── Modo oscuro para las superficies de marca ──────────────────────────────
+   Las clases sqf-* usaban colores claros fijos (con !important), así que en
+   dark mode quedaban como parches claros. Aquí se les da su versión oscura:
+   la tarjeta naranja pasa a una superficie cálida oscura (cifra en naranja),
+   los badges a fondos translúcidos con texto claro, y la tabla a cabecera y
+   hover oscuros. */
+.dark .sqf-metric-card {
+  background-color: #33241b !important;
+}
+.dark .sqf-kpi-card {
+  background-color: var(--card) !important;
+}
+.dark .sqf-badge-green {
+  background-color: rgba(63, 168, 118, 0.18) !important;
+  color: #7ed6a8 !important;
+  border-color: #3fa876 !important;
+}
+.dark .sqf-badge-indigo {
+  background-color: rgba(124, 134, 224, 0.2) !important;
+  color: #b9c2ff !important;
+  border-color: #7c86e0 !important;
+}
+.dark .sqf-badge-orange {
+  background-color: rgba(255, 105, 11, 0.2) !important;
+  color: #ffb488 !important;
+  border-color: #ff690b !important;
+}
+.dark .sqf-badge-wine {
+  background-color: rgba(196, 113, 137, 0.2) !important;
+  color: #e8a9ba !important;
+  border-color: #c47189 !important;
+}
+.dark .sqf-badge-muted {
+  background-color: rgba(148, 154, 166, 0.18) !important;
+  color: #c3c8d2 !important;
+  border-color: #565b66 !important;
+}
+.dark .sqf-table table thead tr {
+  background-color: #2c2e50;
+}
+.dark .sqf-table table thead th {
+  color: #b9c2ff;
+}
+.dark .sqf-table table tbody tr:hover {
+  background-color: rgba(255, 105, 11, 0.1);
+}
+
+/* Ocultar la barra de scroll manteniendo el desplazamiento (viene de main:
+   carruseles y tablas con scroll horizontal la usan). */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

@@ -45,19 +45,16 @@ export function SeguimientoCards() {
   const isLoading = isLoadingStats || isLoadingMeals || isLoadingIMC;
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       {/* Clientes Activos */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Clientes Activos</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.clientesActivos}/{stats.totalClientes}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-            >
+            <Badge variant="outline" className="sqf-badge-green">
               <Users className="size-4" />
               Activos
             </Badge>
@@ -78,17 +75,14 @@ export function SeguimientoCards() {
       </Card>
 
       {/* Revisiones */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Revisiones Programadas</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.revisionesSemana}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-            >
+            <Badge variant="outline" className="sqf-badge-indigo">
               <CalendarCheck className="size-4" />
               Esta semana
             </Badge>
@@ -107,21 +101,14 @@ export function SeguimientoCards() {
       </Card>
 
       {/* Alertas */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Alertas Pendientes</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.alertasSinLeer}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className={
-                stats.alertasAltas > 0
-                  ? "border-red-200 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400"
-                  : "border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-              }
-            >
+            <Badge variant="outline" className={stats.alertasAltas > 0 ? "sqf-badge-wine" : "sqf-badge-orange"}>
               <AlertTriangle className="size-4" />
               {stats.alertasAltas > 0 ? "Urgentes" : "Alertas"}
             </Badge>
@@ -140,17 +127,14 @@ export function SeguimientoCards() {
       </Card>
 
       {/* Comidas Registradas */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Comidas Registradas</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {isLoading ? "..." : stats.comidasHoy || 0}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-purple-200 bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-400"
-            >
+            <Badge variant="outline" className="sqf-badge-wine">
               <UtensilsCrossed className="size-4" />
               Hoy
             </Badge>

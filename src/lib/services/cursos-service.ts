@@ -37,6 +37,7 @@ export interface CreateCursoDto {
   price: number;
   image?: string;
   video_presentation?: string;
+  category?: string;
   // Duración y entrega (15.9) — campos de la UI (ver ProductDeliveryValue).
   access_type?: ProductDeliveryValue["accessType"];
   access_months?: number;
@@ -54,6 +55,7 @@ export interface CreateCursoApiDto {
   tutor_id: string;
   image?: string;
   video_presentation?: string;
+  category?: string;
   // Duración/entrega (contrato real; solo se envían si PRODUCT_DELIVERY_WRITE_READY).
   access_months?: number | null;
   drip_mode?: string;
@@ -301,7 +303,7 @@ export class CursosService {
       students,
       duration: "8 semanas", // Valor por defecto
       level: "Principiante", // Valor por defecto
-      category: "General", // Valor por defecto
+      category: (apiCurso as { category?: string }).category ?? "General",
       thumbnail: validThumbnail,
       tutorId: apiCurso.tutor?.id,
       tutorFirstName: apiCurso.tutor?.firstName,
@@ -476,6 +478,7 @@ export class CursosService {
 
       if (data.name) apiData.title = data.name;
       if (data.description) apiData.subtitle = data.description;
+      if (data.category) apiData.category = data.category;
       if (data.price !== undefined) apiData.price = data.price.toString();
       if (data.instructor) apiData.tutor_id = data.instructor;
 

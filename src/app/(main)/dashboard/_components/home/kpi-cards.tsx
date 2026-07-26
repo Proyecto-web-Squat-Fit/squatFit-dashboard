@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, GraduationCap, MessageSquare, TrendingUp, Users } from "lucide-react";
+import { BookOpen, ClipboardList, GraduationCap, TrendingUp, Users } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,9 +14,10 @@ interface KPIItem {
   label: string;
   value: number;
   icon: React.ElementType;
-  gradient: string;
-  iconColor: string;
   description: string;
+  line: string; // color de la línea superior
+  iconBg: string; // fondo del cuadro del icono
+  iconText: string; // color del icono
 }
 
 // ============================================================================
@@ -25,13 +26,14 @@ interface KPIItem {
 
 function KPICard({ item }: { item: KPIItem }) {
   return (
-    <Card className="group relative overflow-hidden border-0 shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
-      {/* Gradient accent bar */}
-      <div className={`absolute top-0 left-0 h-1 w-full ${item.gradient}`} />
+    <Card className="sqf-kpi-card group">
+      {/* Línea superior de color (de la paleta de marca) */}
+      <div className="absolute top-0 left-0 h-1 w-full" style={{ backgroundColor: item.line }} />
 
       <CardContent className="flex items-center gap-4 p-5">
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${item.iconColor} transition-transform duration-300 group-hover:scale-110`}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+          style={{ backgroundColor: item.iconBg, color: item.iconText }}
         >
           <item.icon className="h-6 w-6" />
         </div>
@@ -108,33 +110,37 @@ export function KPICards() {
       label: "Cursos Vendidos",
       value: data.courses,
       icon: GraduationCap,
-      gradient: "bg-gradient-to-r from-violet-500 to-purple-500",
-      iconColor: "bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400",
       description: "Total de cursos vendidos",
+      line: "#363C98",
+      iconBg: "#363C98",
+      iconText: "#ffffff",
     },
     {
-      label: "Asesorías",
+      label: "Planes",
       value: data.advices,
-      icon: MessageSquare,
-      gradient: "bg-gradient-to-r from-sky-500 to-blue-500",
-      iconColor: "bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400",
-      description: "Total de asesorías contratadas",
+      icon: ClipboardList,
+      description: "Total de planes contratados",
+      line: "#C2C0FC",
+      iconBg: "#C2C0FC",
+      iconText: "#363C98",
     },
     {
       label: "Libros",
       value: data.books,
       icon: BookOpen,
-      gradient: "bg-gradient-to-r from-amber-500 to-orange-500",
-      iconColor: "bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
       description: "Total de libros comprados",
+      line: "#FF690B",
+      iconBg: "#FF690B",
+      iconText: "#ffffff",
     },
     {
       label: "Usuarios",
       value: data.users,
       icon: Users,
-      gradient: "bg-gradient-to-r from-emerald-500 to-green-500",
-      iconColor: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400",
       description: "Usuarios registrados",
+      line: "#F8D5BF",
+      iconBg: "#F8D5BF",
+      iconText: "#FF690B",
     },
   ];
 

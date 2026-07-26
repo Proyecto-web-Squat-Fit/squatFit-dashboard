@@ -40,7 +40,8 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {/* Nombre en español si la columna define meta.label; si no, su id */}
+                {(column.columnDef.meta as { label?: string } | undefined)?.label ?? column.id}
               </DropdownMenuCheckboxItem>
             );
           })}

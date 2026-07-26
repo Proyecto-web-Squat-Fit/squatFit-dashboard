@@ -32,19 +32,16 @@ export function PautasCards() {
   }, [backendStats, mockStats, isLoading]);
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       {/* Total Pautas */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Total de Pautas</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {isLoading ? <Loader2 className="inline-block size-5 animate-spin" /> : stats.totalPautas}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-            >
+            <Badge variant="outline" className="sqf-badge-indigo">
               <FileText className="size-4" />
               Pautas
             </Badge>
@@ -60,17 +57,14 @@ export function PautasCards() {
       </Card>
 
       {/* Pautas Activas */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Pautas Activas</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.pautasActivas}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-green-200 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
-            >
+            <Badge variant="outline" className="sqf-badge-green">
               <CheckCircle2 className="size-4" />
               Activas
             </Badge>
@@ -83,17 +77,14 @@ export function PautasCards() {
       </Card>
 
       {/* Clientes sin Pauta */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Clientes sin Pauta</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.clientesSinPauta}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-            >
+            <Badge variant="outline" className="sqf-badge-orange">
               <AlertCircle className="size-4" />
               Pendientes
             </Badge>
@@ -109,7 +100,7 @@ export function PautasCards() {
       </Card>
 
       {/* Macros Promedio */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Macros Promedio</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -120,10 +111,7 @@ export function PautasCards() {
             )}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-purple-200 bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-400"
-            >
+            <Badge variant="outline" className="sqf-badge-wine">
               <Clock className="size-4" />
               Diario
             </Badge>

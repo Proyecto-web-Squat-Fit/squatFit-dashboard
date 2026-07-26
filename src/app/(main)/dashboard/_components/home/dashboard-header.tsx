@@ -2,21 +2,13 @@
 
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { LayoutDashboard } from "lucide-react";
+import { Home } from "lucide-react";
 
 /**
  * Header del dashboard con saludo dinámico y fecha actual
  */
 export function DashboardHeader() {
   const now = new Date();
-  const hour = now.getHours();
-
-  let greeting = "Buenos días";
-  if (hour >= 12 && hour < 18) {
-    greeting = "Buenas tardes";
-  } else if (hour >= 18) {
-    greeting = "Buenas noches";
-  }
 
   const formattedDate = format(now, "EEEE, d 'de' MMMM 'de' yyyy", {
     locale: es,
@@ -26,10 +18,10 @@ export function DashboardHeader() {
     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg">
-          <LayoutDashboard className="h-5 w-5" />
+          <Home className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dasboard SquatFit {/* greeting*/}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Inicio</h1>
           <p className="text-muted-foreground text-sm capitalize">{formattedDate}</p>
         </div>
       </div>

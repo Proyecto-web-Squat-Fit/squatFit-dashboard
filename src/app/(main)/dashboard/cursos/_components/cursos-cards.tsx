@@ -39,7 +39,7 @@ export function CursosCards() {
     return (
       <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="@container/card">
+          <Card key={i} className="sqf-metric-card @container/card">
             <CardHeader>
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-8 w-16" />
@@ -55,8 +55,8 @@ export function CursosCards() {
   }
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Cursos Totales</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.total}</CardTitle>
@@ -76,15 +76,12 @@ export function CursosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Cursos Activos</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.activos}</CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-green-200 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
-            >
+            <Badge variant="outline" className="sqf-badge-green">
               <TrendingUp className="size-4" />
               Disponibles
             </Badge>
@@ -98,17 +95,14 @@ export function CursosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Total Estudiantes</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {Number(stats.totalEstudiantes).toLocaleString("es-ES")}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-            >
+            <Badge variant="outline" className="sqf-badge-indigo">
               <Users className="size-4" />
               Activos
             </Badge>
@@ -122,17 +116,14 @@ export function CursosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Ingresos Potenciales</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             €{stats.ingresosPotenciales.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-orange-200 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400"
-            >
+            <Badge variant="outline" className="sqf-badge-orange">
               <DollarSign className="size-4" />
               Total
             </Badge>

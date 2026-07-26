@@ -27,6 +27,7 @@ export function useUpdateUser() {
       queryClient.invalidateQueries({ queryKey: ["entrenadores"] });
       queryClient.invalidateQueries({ queryKey: ["alumnos"] });
       queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+      queryClient.invalidateQueries({ queryKey: ["usuarios-directory"] });
 
       toast.success("Usuario actualizado exitosamente", {
         id: `update-user-${context?.userId}`,

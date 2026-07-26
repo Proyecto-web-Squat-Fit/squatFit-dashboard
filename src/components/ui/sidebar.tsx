@@ -4,7 +4,6 @@
 import * as React from "react"
 import { Slot as SlotPrimitive } from "radix-ui"
 import { cva, VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -252,12 +251,16 @@ function Sidebar({
   )
 }
 
+// Mismo botón de menú que la web pública (BurgerMenu.js): tres rayas
+// redondeadas, índigo de marca en reposo y naranja cuando el menú está
+// desplegado. Así el gesto es el mismo en la web y en el back office.
 function SidebarTrigger({
   className,
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state, isMobile, openMobile } = useSidebar()
+  const abierto = isMobile ? openMobile : state === "expanded"
 
   return (
     <Button
@@ -265,15 +268,24 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7", className)}
+      className={cn(
+        "size-9 transition-all hover:bg-transparent active:scale-90",
+        className
+      )}
+      style={{ color: abierto ? "#FF690B" : "#363C98" }}
+      aria-expanded={abierto}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      <svg width="27" height="20" viewBox="0 0 27 20" fill="none" aria-hidden="true">
+        <line x1="2.8" y1="3" x2="24.2" y2="3" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <line x1="2.8" y1="10" x2="24.2" y2="10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <line x1="2.8" y1="17" x2="24.2" y2="17" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+      </svg>
+      <span className="sr-only">{abierto ? "Ocultar menú" : "Mostrar menú"}</span>
     </Button>
   )
 }

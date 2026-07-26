@@ -1,5 +1,5 @@
 import { AlumnosCards } from "./_components/alumnos-cards";
-import { AlumnosTable } from "./_components/alumnos-table";
+import { UsuariosDirectoryTable } from "./_components/usuarios-directory-table";
 
 export default function Page() {
   return (
@@ -7,8 +7,8 @@ export default function Page() {
       {/* Tarjetas de resumen */}
       <AlumnosCards />
 
-      {/* Tabla de alumnos */}
-      <AlumnosTable />
+      {/* Directorio de usuarios (diseño: pestañas + asignados + roles) */}
+      <UsuariosDirectoryTable />
     </div>
   );
 }

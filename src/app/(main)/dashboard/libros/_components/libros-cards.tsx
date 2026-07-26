@@ -31,7 +31,7 @@ export function LibrosCards() {
     return (
       <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="@container/card">
+          <Card key={i} className="sqf-metric-card @container/card">
             <CardHeader>
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-8 w-16" />
@@ -47,8 +47,8 @@ export function LibrosCards() {
   }
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Libros Totales</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.total}</CardTitle>
@@ -67,17 +67,14 @@ export function LibrosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Libros con Versiones</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.conVersiones}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-green-200 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
-            >
+            <Badge variant="outline" className="sqf-badge-green">
               <Layers className="size-4" />
               Con versiones
             </Badge>
@@ -89,17 +86,14 @@ export function LibrosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Total Versiones</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.totalVersiones}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-            >
+            <Badge variant="outline" className="sqf-badge-indigo">
               <Package className="size-4" />
               Versiones
             </Badge>
@@ -111,17 +105,14 @@ export function LibrosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Libros sin versiones</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.sinVersiones}
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-orange-200 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400"
-            >
+            <Badge variant="outline" className="sqf-badge-orange">
               <BookMarked className="size-4" />
               Pendientes
             </Badge>

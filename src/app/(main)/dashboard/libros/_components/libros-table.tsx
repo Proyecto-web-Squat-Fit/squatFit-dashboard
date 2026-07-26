@@ -3,16 +3,24 @@
 import { useState, useMemo, useCallback } from "react";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Search } from "lucide-react";
+import { Download, Plus, Search } from "lucide-react";
 
+import { BulkActionsBar } from "@/components/data-table/bulk-actions-bar";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { useLibros } from "@/hooks/use-libros";
+import { exportCSV, exportPDF, exportXLSX, type ExportColumn } from "@/lib/export/table-export";
 
 import { BookVersionsModal } from "./book-versions-modal";
 import { LibroActions } from "./columns-actions";
@@ -79,12 +87,30 @@ export function LibrosTable() {
   const table = useDataTableInstance({
     data: libros,
     columns,
+    enableColumnResizing: true,
     getRowId: (row) => row.id,
     state: {
       globalFilter,
     },
     onGlobalFilterChange: setGlobalFilter,
   });
+
+  const selected = table.getSelectedRowModel().rows.map((r) => r.original);
+
+  const EXPORT_COLUMNS: ExportColumn<Libro>[] = [
+    { key: "title", label: "Título" },
+    { key: "subtitle", label: "Subtítulo" },
+    { key: "versions", label: "Versiones", value: (l) => String(l.versions?.length ?? 0) },
+    { key: "createdAt", label: "Fecha", value: (l) => l.createdAt ?? "" },
+  ];
+
+  const doExport = (fmt: "csv" | "xlsx" | "pdf") => {
+    const rows = selected.length ? selected : libros;
+    const name = `cocina-${rows.length}`;
+    if (fmt === "csv") exportCSV(name, EXPORT_COLUMNS, rows);
+    else if (fmt === "xlsx") void exportXLSX(name, EXPORT_COLUMNS, rows);
+    else void exportPDF(name, EXPORT_COLUMNS, rows, "Cocina");
+  };
 
   return (
     <>
@@ -101,6 +127,12 @@ export function LibrosTable() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Barra de búsqueda y controles */}
+          <BulkActionsBar
+            selectedCount={selected.length}
+            onApply={(a) => a === "exportar" && doExport("csv")}
+            actions={[{ value: "exportar", label: "Exportar selección (CSV)" }]}
+          />
+
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1">
               <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
@@ -111,11 +143,24 @@ export function LibrosTable() {
                 className="pl-8"
               />
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => doExport("csv")}>CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => doExport("xlsx")}>Excel (XLSX)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => doExport("pdf")}>PDF</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DataTableViewOptions table={table} />
           </div>
 
           {/* Tabla */}
-          <div className="overflow-hidden rounded-lg border">
+          <div className="sqf-table overflow-hidden rounded-lg border">
             {isLoading ? (
               <div className="flex h-[400px] items-center justify-center">
                 <div className="flex flex-col items-center gap-2">
@@ -145,7 +190,7 @@ export function LibrosTable() {
                 </div>
               </div>
             ) : (
-              <DataTable table={table} columns={columns} />
+              <DataTable table={table} columns={columns} enableColumnResize enableColumnReorder />
             )}
           </div>
 

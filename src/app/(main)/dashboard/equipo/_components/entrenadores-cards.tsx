@@ -5,8 +5,8 @@ import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } 
 
 export function EntrenadoresCards() {
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Entrenadores Totales</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">12</CardTitle>
@@ -23,12 +23,12 @@ export function EntrenadoresCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Entrenadores Activos</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">9</CardTitle>
           <CardAction>
-            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+            <Badge variant="outline" className="sqf-badge-green">
               <TrendingUp className="size-4" />
               75% disponibles
             </Badge>
@@ -40,12 +40,12 @@ export function EntrenadoresCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Rating Promedio</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">4.76</CardTitle>
           <CardAction>
-            <Badge variant="outline" className="border-yellow-200 bg-yellow-50 text-yellow-700">
+            <Badge variant="outline" className="sqf-badge-orange">
               <Star className="size-4 fill-yellow-500" />
               Excelente
             </Badge>
@@ -57,12 +57,12 @@ export function EntrenadoresCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Tarifa Promedio</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">€46.67</CardTitle>
           <CardAction>
-            <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">
+            <Badge variant="outline" className="sqf-badge-orange">
               <DollarSign className="size-4" />
               /hora
             </Badge>

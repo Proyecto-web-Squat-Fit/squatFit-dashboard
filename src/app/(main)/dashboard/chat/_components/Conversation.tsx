@@ -123,13 +123,13 @@ const MessageInput = React.memo(
     return (
       <div className="border-t">
         {replyingTo && (
-          <div className="flex items-center justify-between bg-gray-50 px-4 py-2 dark:bg-gray-800">
+          <div className="bg-muted flex items-center justify-between px-4 py-2 dark:bg-gray-800">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <Reply className="h-4 w-4 text-gray-500" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Respondiendo a:</span>
+                <Reply className="text-muted-foreground h-4 w-4" />
+                <span className="text-foreground text-xs font-semibold dark:text-gray-300">Respondiendo a:</span>
               </div>
-              <p className="ml-6 truncate text-xs text-gray-600 dark:text-gray-400">
+              <p className="text-foreground dark:text-muted-foreground ml-6 truncate text-xs">
                 {replyingTo.content?.substring(0, 50)}
                 {replyingTo.content && replyingTo.content.length > 50 ? "..." : ""}
               </p>
@@ -142,8 +142,8 @@ const MessageInput = React.memo(
         {participantCheckError && (
           <div className="mx-4 my-2 border-l-4 border-yellow-400 bg-yellow-50 p-3 dark:border-yellow-500 dark:bg-yellow-900/20">
             <div className="flex items-center">
-              <AlertCircle className="mr-2 h-5 w-5 flex-shrink-0 text-yellow-400" />
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">{participantCheckError}</p>
+              <AlertCircle className="mr-2 h-5 w-5 flex-shrink-0 text-[#FF690B]" />
+              <p className="text-sm text-[#FF690B] dark:text-[#FF690B]">{participantCheckError}</p>
             </div>
           </div>
         )}
@@ -190,16 +190,16 @@ const generateColorFromId = (id: string): string => {
 
   // Paleta de colores profesionales (evitando gris y naranja que ya usamos)
   const colors = [
-    "bg-blue-500",
-    "bg-purple-500",
-    "bg-green-500",
+    "bg-[#363C98]",
+    "bg-[#9f4e63]",
+    "bg-[#2f855a]",
     "bg-indigo-500",
     "bg-pink-500",
     "bg-teal-500",
     "bg-cyan-500",
     "bg-violet-500",
     "bg-fuchsia-500",
-    "bg-emerald-500",
+    "bg-[#2f855a]",
   ];
 
   const index = Math.abs(hash) % colors.length;
@@ -490,11 +490,13 @@ export default function Conversation() {
     return (
       <div className="flex h-full items-center justify-center rounded-lg bg-white dark:bg-gray-900/50">
         <div className="text-center">
-          <div className="mb-4 text-gray-400">
+          <div className="text-muted-foreground mb-4">
             <MoreHorizontal size={48} />
           </div>
-          <p className="mb-2 text-lg font-semibold text-gray-500 dark:text-gray-400">Selecciona una conversación</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500">
+          <p className="text-muted-foreground dark:text-muted-foreground mb-2 text-lg font-semibold">
+            Selecciona una conversación
+          </p>
+          <p className="text-muted-foreground dark:text-muted-foreground text-sm">
             Elige un chat de la lista para comenzar a conversar
           </p>
         </div>
@@ -506,11 +508,11 @@ export default function Conversation() {
 
   return (
     <div className="flex h-screen max-h-screen flex-col rounded-lg bg-white dark:bg-gray-900/50">
-      <header className="flex items-center border-b border-gray-200 p-4 dark:border-gray-700">
+      <header className="border-border flex items-center border-b p-4 dark:border-gray-700">
         <div className="flex-grow">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedConversation.name}</h2>
-            {selectedConversation.isActive && <div className="h-2 w-2 rounded-full bg-green-500" />}
+            <h2 className="text-foreground text-lg font-bold dark:text-gray-100">{selectedConversation.name}</h2>
+            {selectedConversation.isActive && <div className="h-2 w-2 rounded-full bg-[#2f855a]" />}
           </div>
           <p className="text-primary dark:text-primary-400 text-sm">
             {selectedConversation.tags.length > 0
@@ -522,8 +524,8 @@ export default function Conversation() {
         </div>
         <div className="flex items-center gap-2">
           {!isConnected && (
-            <div className="flex items-center gap-1 text-xs text-red-500">
-              <div className="h-2 w-2 rounded-full bg-red-500" />
+            <div className="flex items-center gap-1 text-xs text-[#9f4e63]">
+              <div className="h-2 w-2 rounded-full bg-[#9f4e63]" />
               Sin conexión
             </div>
           )}
@@ -552,19 +554,19 @@ export default function Conversation() {
             onClick={() => setIsSavedResponsesPanelOpen(true)}
             title="Respuestas guardadas"
           >
-            <MessageSquare className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <MessageSquare className="text-muted-foreground dark:text-muted-foreground h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon">
-            <MoreHorizontal className="text-gray-500 dark:text-gray-400" />
+            <MoreHorizontal className="text-muted-foreground dark:text-muted-foreground" />
           </Button>
         </div>
       </header>
 
       {/* Barra de búsqueda */}
       {searchQuery && (
-        <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800">
+        <div className="border-border bg-muted flex items-center gap-2 border-b px-4 py-2 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex flex-1 items-center gap-2">
-            <Search className="h-4 w-4 text-gray-400" />
+            <Search className="text-muted-foreground h-4 w-4" />
             <Input
               value={searchQuery}
               onChange={(e) => {
@@ -588,7 +590,7 @@ export default function Conversation() {
           </div>
           {searchResults.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-foreground dark:text-muted-foreground text-sm">
                 {currentSearchIndex + 1} de {searchResults.length}
               </span>
               <Button
@@ -637,10 +639,10 @@ export default function Conversation() {
           <div className="flex flex-col gap-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="flex animate-pulse items-end gap-2">
-                <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700" />
-                <div className="max-w-md rounded-lg bg-gray-200 p-3 dark:bg-gray-700">
-                  <div className="mb-1 h-4 rounded bg-gray-300 dark:bg-gray-600" />
-                  <div className="h-3 w-1/3 rounded bg-gray-300 dark:bg-gray-600" />
+                <div className="bg-muted h-8 w-8 rounded-full dark:bg-gray-700" />
+                <div className="bg-muted max-w-md rounded-lg p-3 dark:bg-gray-700">
+                  <div className="bg-muted mb-1 h-4 rounded dark:bg-gray-600" />
+                  <div className="bg-muted h-3 w-1/3 rounded dark:bg-gray-600" />
                 </div>
               </div>
             ))}
@@ -655,16 +657,16 @@ export default function Conversation() {
               const messageTyped = message as any;
               const msgContent = message.content ?? "";
               if (msgContent.includes("desde") || msgContent.includes("adviser") || msgContent.includes("dietista")) {
-                let bgClass = "bg-gray-200";
+                let bgClass = "bg-muted";
                 let messageType = "unknown";
                 if (message.isFromMe) {
-                  bgClass = "bg-orange-500";
+                  bgClass = "bg-[#FF690B]";
                   messageType = "Profesional actual";
                 } else if (messageTyped.isFromMainUser) {
-                  bgClass = "bg-gray-200";
+                  bgClass = "bg-muted";
                   messageType = `${messageTyped.senderName as string} (${messageTyped.senderRole as string})`;
                 } else if (messageTyped.isFromOtherProfessional) {
-                  bgClass = (messageTyped.dynamicColor as string) ?? "bg-blue-500";
+                  bgClass = (messageTyped.dynamicColor as string) ?? "bg-[#363C98]";
                   messageType = `${messageTyped.senderName as string} (Colaborador)`;
                 }
                 const alignment = message.isFromMe ? "justify-end" : "justify-start";
@@ -674,9 +676,9 @@ export default function Conversation() {
               }
 
               // Determinar clase de color para el mensaje
-              let messageColorClass = "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100";
+              let messageColorClass = "bg-muted text-foreground dark:bg-gray-700 dark:text-gray-100";
               if (message.isFromMe) {
-                messageColorClass = "bg-orange-500 text-white";
+                messageColorClass = "bg-[#FF690B] text-white";
               } else if (messageTyped.isFromOtherProfessional && messageTyped.dynamicColor) {
                 messageColorClass = `${messageTyped.dynamicColor as string} text-white`;
               }
@@ -685,7 +687,7 @@ export default function Conversation() {
                 <React.Fragment key={message.stableKey}>
                   {showDateSeparator && (
                     <div className="my-2 flex justify-center">
-                      <span className="rounded-full bg-gray-200 px-3 py-1 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-300">
+                      <span className="text-muted-foreground bg-muted rounded-full px-3 py-1 text-xs dark:bg-gray-700 dark:text-gray-300">
                         {formatDate(message.created_at)}
                       </span>
                     </div>
@@ -721,7 +723,7 @@ export default function Conversation() {
                       )}
                       {/* Mostrar mensaje citado si existe */}
                       {message.reply_to_message && (
-                        <div className="mb-2 border-l-2 border-gray-300 pl-2 text-xs opacity-80 dark:border-gray-600">
+                        <div className="border-border mb-2 border-l-2 pl-2 text-xs opacity-80 dark:border-gray-600">
                           <div className="font-semibold">
                             {((
                               (message.reply_to_message as unknown as Record<string, unknown>)?.sender as Record<
@@ -757,7 +759,7 @@ export default function Conversation() {
                                   <div className="mt-2">
                                     <button
                                       onClick={() => toggleMessageExpansion(message.id)}
-                                      className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                      className="flex items-center gap-1 text-xs text-[#363C98] hover:text-[#363C98] dark:text-[#363C98] dark:hover:text-[#363C98]"
                                     >
                                       Ver menos <ChevronUp className="h-3 w-3" />
                                     </button>
@@ -780,7 +782,7 @@ export default function Conversation() {
                                 <div className="mt-2">
                                   <button
                                     onClick={() => toggleMessageExpansion(message.id)}
-                                    className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                    className="flex items-center gap-1 text-xs text-[#363C98] hover:text-[#363C98] dark:text-[#363C98] dark:hover:text-[#363C98]"
                                   >
                                     Ver más <ChevronDown className="h-3 w-3" />
                                   </button>
@@ -822,8 +824,8 @@ export default function Conversation() {
         )}
 
         {error && (
-          <div className="mt-4 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div className="mt-4 rounded-lg bg-[#e8d8de] p-3 dark:bg-red-900/20">
+            <p className="text-sm text-[#9f4e63] dark:text-[#9f4e63]">{error}</p>
           </div>
         )}
         {showScrollButton && (

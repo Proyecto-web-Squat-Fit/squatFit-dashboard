@@ -13,29 +13,29 @@ const data = [
   {
     label: "Income",
     amount: "$9600K",
-    icon: <TrendingUp className="h-5 w-5 text-green-500" />,
-    from: "from-green-100",
-    to: "to-green-300",
-    labelColor: "text-green-400",
-    amountColor: "text-gray-600",
+    icon: <TrendingUp className="h-5 w-5 text-[#2f855a]" />,
+    from: "from-[#e4f0ea]",
+    to: "to-[#e4f0ea]",
+    labelColor: "text-[#2f855a]",
+    amountColor: "text-foreground",
   },
   {
     label: "Expenses",
     amount: "$24000K",
-    icon: <TrendingDown className="h-5 w-5 text-orange-500" />,
-    from: "from-orange-100",
-    to: "to-orange-300",
-    labelColor: "text-orange-400",
-    amountColor: "text-gray-600",
+    icon: <TrendingDown className="h-5 w-5 text-[#FF690B]" />,
+    from: "from-[#FFF0E7]",
+    to: "to-[#FFDCC6]",
+    labelColor: "text-[#FF690B]",
+    amountColor: "text-foreground",
   },
   {
     label: "Scheduled",
     amount: "$14000K",
-    icon: <CalendarCheck className="h-5 w-5 text-gray-500" />,
-    from: "from-gray-100",
-    to: "to-gray-300",
-    labelColor: "text-gray-400",
-    amountColor: "text-gray-700",
+    icon: <CalendarCheck className="text-muted-foreground h-5 w-5" />,
+    from: "from-muted",
+    to: "to-muted",
+    labelColor: "text-muted-foreground",
+    amountColor: "text-foreground",
   },
 ];
 const chartData = [
@@ -76,31 +76,31 @@ const Budget: React.FC = () => {
       <CardHeader className="flex flex-col gap-2">
         <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-10 items-center justify-center rounded-md bg-orange-100">
-              <FileChartColumn className="h-6 w-6 text-orange-500" />
+            <div className="flex h-8 w-10 items-center justify-center rounded-md bg-[#FFF0E7]">
+              <FileChartColumn className="h-6 w-6 text-[#FF690B]" />
             </div>
-            <span className="text-base font-semibold text-gray-700">Budget Overview</span>
+            <span className="text-foreground text-base font-semibold">Budget Overview</span>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex gap-4">
               <div className="flex items-center gap-1">
                 <div className="h-2 w-2 rounded-full bg-green-400" />
-                <span className="text-xs text-gray-500">Income</span>
+                <span className="text-muted-foreground text-xs">Income</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-orange-300" />
-                <span className="text-xs text-gray-500">Expenses</span>
+                <div className="h-2 w-2 rounded-full bg-[#FFDCC6]" />
+                <span className="text-muted-foreground text-xs">Expenses</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-gray-300" />
-                <span className="text-xs text-gray-500">Scheduled</span>
+                <div className="bg-muted h-2 w-2 rounded-full" />
+                <span className="text-muted-foreground text-xs">Scheduled</span>
               </div>
             </div>
 
             {/* Dropdown */}
             <Select defaultValue="last-year">
-              <SelectTrigger className="h-8 w-[150px] border border-orange-500 bg-none text-sm shadow-none focus:border-orange-500 focus:ring-0">
+              <SelectTrigger className="h-8 w-[150px] border border-[#FF690B] bg-none text-sm shadow-none focus:border-[#FF690B] focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

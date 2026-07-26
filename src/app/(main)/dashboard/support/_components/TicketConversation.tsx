@@ -12,11 +12,13 @@ export default function TicketConversation() {
   if (!selectedTicket) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-        <div className="mb-4 rounded-full bg-gray-100 p-6 dark:bg-gray-800">
-          <MessageSquare size={48} className="text-gray-400" />
+        <div className="bg-muted mb-4 rounded-full p-6 dark:bg-gray-800">
+          <MessageSquare size={48} className="text-muted-foreground" />
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-gray-200">Selecciona un ticket</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Elige un ticket de la lista para ver la conversación</p>
+        <h3 className="text-foreground mb-2 text-lg font-semibold dark:text-gray-200">Selecciona un ticket</h3>
+        <p className="text-muted-foreground dark:text-muted-foreground text-sm">
+          Elige un ticket de la lista para ver la conversación
+        </p>
       </div>
     );
   }

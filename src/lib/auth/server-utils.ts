@@ -12,9 +12,14 @@ export const setAuthTokenInCookies = async (token: string): Promise<void> => {
   const cookieStore = await cookies();
   cookieStore.set("authToken", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // En producción la cookie es Secure (solo HTTPS). El build de revisión de la
+    // LAN se sirve por HTTP, así que ahí Secure haría que el navegador la
+    // descarte y el guard rebotara al login: se desactiva con
+    // ALLOW_INSECURE_COOKIES=true (solo para ese build; el prod real de Vercel
+    // no la define, así que mantiene Secure).
+    secure: process.env.NODE_ENV === "production" && process.env.ALLOW_INSECURE_COOKIES !== "true",
     sameSite: "strict",
-    maxAge: 3600, // 1 hora
+    maxAge: 60 * 60 * 24 * 30, // 30 días (antes 1 hora; el JWT dura 90d)
     path: "/",
   });
 };

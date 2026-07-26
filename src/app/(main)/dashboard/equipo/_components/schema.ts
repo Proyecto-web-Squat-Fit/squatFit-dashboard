@@ -11,6 +11,7 @@ export const entrenadorSchema = z.object({
   email: z.string().email(),
   user_id: z.string(),
   user_status: z.number(), // 0 = Inactivo, 1 = Activo
+  staff_role: z.string().nullable().optional(), // Rol formal (Nutri/Trainer/Psicóloga/Soporte/Ventas/Admin)
 });
 
 export type Entrenador = z.infer<typeof entrenadorSchema>;

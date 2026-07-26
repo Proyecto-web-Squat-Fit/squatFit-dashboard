@@ -33,8 +33,8 @@ export function AlumnosCards() {
   }, [alumnosData]);
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Alumnos Totales</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.total}</CardTitle>
@@ -53,12 +53,12 @@ export function AlumnosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Alumnos Activos</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.activos}</CardTitle>
           <CardAction>
-            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+            <Badge variant="outline" className="sqf-badge-green">
               <UserCheck className="size-4" />
               {stats.total > 0 ? Math.round((stats.activos / stats.total) * 100) : 0}% activos
             </Badge>
@@ -70,12 +70,12 @@ export function AlumnosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Usuarios</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.usuarios}</CardTitle>
           <CardAction>
-            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
+            <Badge variant="outline" className="sqf-badge-indigo">
               <Users className="size-4" />
               Alumnos
             </Badge>
@@ -89,14 +89,14 @@ export function AlumnosCards() {
         </CardFooter>
       </Card>
 
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <CardDescription>Distribución de Roles</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {stats.coaches + stats.admins}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700">
+            <Badge variant="outline" className="sqf-badge-wine">
               <Activity className="size-4" />
               Staff
             </Badge>

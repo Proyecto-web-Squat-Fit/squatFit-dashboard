@@ -56,16 +56,16 @@ interface DetailItemProps {
 const DetailItem: React.FC<DetailItemProps> = ({ label, value, interactive, icon, action, onClick }) => (
   <div
     className={clsx("flex items-center justify-between py-3 transition-colors duration-150", {
-      "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800": interactive ?? action,
+      "hover:bg-muted cursor-pointer dark:hover:bg-gray-800": interactive ?? action,
     })}
     onClick={onClick}
   >
-    <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+    <span className="text-muted-foreground dark:text-muted-foreground text-sm">{label}</span>
     <div className="flex items-center gap-2">
       {icon}
-      <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{value}</span>
-      {interactive && <ChevronRight size={16} className="text-gray-400" />}
-      {action && <button className="text-sm text-orange-500 hover:underline">{action}</button>}
+      <span className="text-foreground text-sm font-semibold dark:text-gray-100">{value}</span>
+      {interactive && <ChevronRight size={16} className="text-muted-foreground" />}
+      {action && <button className="text-sm text-[#FF690B] hover:underline">{action}</button>}
     </div>
   </div>
 );
@@ -311,7 +311,7 @@ export default function FichaTecnica() {
     try {
       const token = getAuthToken();
       if (token) {
-        const decoded = jwtDecode(token) as any;
+        const decoded = jwtDecode<{ sub?: string; id?: string; role?: string }>(token);
         return (decoded.sub as string) ?? (decoded.id as string);
       }
     } catch (error) {
@@ -332,7 +332,7 @@ export default function FichaTecnica() {
     try {
       const token = getAuthToken();
       if (token) {
-        const decoded = jwtDecode(token) as any;
+        const decoded = jwtDecode<{ sub?: string; id?: string; role?: string }>(token);
 
         // Permitir si es admin
         if (decoded.role === "admin") return true;
@@ -395,12 +395,14 @@ export default function FichaTecnica() {
   // Renderizar estado sin conversación seleccionada
   if (!selectedConversation) {
     return (
-      <div className="flex h-full items-center justify-center rounded-lg bg-gray-50/50 p-4 dark:bg-gray-900/20">
+      <div className="bg-muted/50 flex h-full items-center justify-center rounded-lg p-4 dark:bg-gray-900/20">
         <div className="text-center">
-          <div className="mb-4 text-gray-400">
+          <div className="text-muted-foreground mb-4">
             <Users size={48} />
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Selecciona una conversación para ver detalles</p>
+          <p className="text-muted-foreground dark:text-muted-foreground text-sm">
+            Selecciona una conversación para ver detalles
+          </p>
         </div>
       </div>
     );
@@ -440,21 +442,21 @@ export default function FichaTecnica() {
     switch (tag.toLowerCase()) {
       case "nutrition":
       case "nutrición":
-        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+        return "bg-[#e4f0ea] text-[#2f855a] dark:bg-green-900/30 dark:text-[#2f855a]";
       case "training":
       case "entrenamiento":
-        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+        return "bg-[#e7e6ff] text-[#363C98] dark:bg-blue-900/30 dark:text-[#363C98]";
       case "emotional":
       case "emocional":
-        return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+        return "bg-[#e8d8de] text-[#9f4e63] dark:bg-purple-900/30 dark:text-[#9f4e63]";
       case "support":
       case "soporte":
-        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+        return "bg-[#FFF0E7] text-[#FF690B] dark:bg-orange-900/30 dark:text-[#FF690B]";
       case "sales":
       case "ventas":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+        return "bg-[#FFF0E7] text-[#FF690B] dark:bg-yellow-900/30 dark:text-[#FF690B]";
       default:
-        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
+        return "bg-muted text-foreground dark:bg-gray-800 dark:text-muted-foreground";
     }
   };
 
@@ -470,19 +472,19 @@ export default function FichaTecnica() {
         icon: (
           <Circle
             size={14}
-            className={clsx("fill-current", selectedConversation.isActive ? "text-green-500" : "text-gray-400")}
+            className={clsx("fill-current", selectedConversation.isActive ? "text-[#2f855a]" : "text-muted-foreground")}
           />
         ),
       },
       {
         label: "Mensajes no leídos",
         value: selectedConversation.unread.toString(),
-        icon: <MessageSquare size={14} className="text-blue-500" />,
+        icon: <MessageSquare size={14} className="text-[#363C98]" />,
       },
       {
         label: "Última actividad",
         value: getLastActivity(),
-        icon: <Clock size={14} className="text-gray-500" />,
+        icon: <Clock size={14} className="text-muted-foreground" />,
       },
       {
         label: "Colaboradores",
@@ -501,15 +503,15 @@ export default function FichaTecnica() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-6 rounded-lg bg-gray-50/50 p-4 dark:bg-gray-900/20">
+    <div className="bg-muted/50 flex h-full flex-col gap-6 rounded-lg p-4 dark:bg-gray-900/20">
       <h2 className="text-primary text-lg font-bold">Ficha Técnica</h2>
 
       {/* Información del Usuario */}
       <div className="flex flex-col items-center gap-2 text-center">
-        <Avatar className="h-20 w-20 bg-gradient-to-br from-orange-500 to-red-500">
+        <Avatar className="from-[#FFF7F2]0 h-20 w-20 bg-gradient-to-br to-[#9f4e63]">
           <AvatarFallback className="bg-transparent text-2xl font-bold text-white">{fichaData.initials}</AvatarFallback>
         </Avatar>
-        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{fichaData.name}</p>
+        <p className="text-foreground text-lg font-bold dark:text-gray-100">{fichaData.name}</p>
         {/* Etiquetas como badges */}
         {fichaData.tags && fichaData.tags.length > 0 ? (
           <div className="flex flex-wrap justify-center gap-1">
@@ -521,7 +523,7 @@ export default function FichaTecnica() {
           </div>
         ) : (
           // ✅ Mostrar rol del profesional si es professional_professional, sino "Sin etiquetas"
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-muted-foreground dark:text-muted-foreground text-sm">
             {selectedConversation.chat_type === "professional_professional" && selectedConversation.professionalRole
               ? `Rol: ${getRoleDisplayName(selectedConversation.professionalRole)}`
               : "Sin etiquetas"}
@@ -532,12 +534,14 @@ export default function FichaTecnica() {
         <div className="flex items-center gap-1 text-xs">
           <Circle
             size={8}
-            className={clsx("fill-current", selectedConversation.isActive ? "text-green-500" : "text-gray-400")}
+            className={clsx("fill-current", selectedConversation.isActive ? "text-[#2f855a]" : "text-muted-foreground")}
           />
           <span
             className={clsx(
               "font-medium",
-              selectedConversation.isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400",
+              selectedConversation.isActive
+                ? "text-[#2f855a] dark:text-[#2f855a]"
+                : "text-muted-foreground dark:text-muted-foreground",
             )}
           >
             {selectedConversation.isActive ? "En línea" : "Desconectado"}
@@ -555,7 +559,7 @@ export default function FichaTecnica() {
       {/* Tareas */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+          <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold dark:text-gray-300">
             <Circle size={16} />
             Tareas
           </h3>
@@ -566,10 +570,10 @@ export default function FichaTecnica() {
         </div>
         {loadingTasks ? (
           <div className="flex items-center justify-center py-4">
-            <Loader2 size={16} className="animate-spin text-gray-400" />
+            <Loader2 size={16} className="text-muted-foreground animate-spin" />
           </div>
         ) : tasks.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+          <div className="border-border text-muted-foreground dark:text-muted-foreground rounded-lg border border-dashed p-4 text-center text-sm dark:border-gray-700">
             No hay tareas asignadas
           </div>
         ) : (
@@ -578,44 +582,44 @@ export default function FichaTecnica() {
               const getStatusIcon = () => {
                 switch (task.status) {
                   case "completed":
-                    return <CheckCircle2 size={14} className="text-green-500" />;
+                    return <CheckCircle2 size={14} className="text-[#2f855a]" />;
                   case "in_progress":
-                    return <Circle size={14} className="text-blue-500" />;
+                    return <Circle size={14} className="text-[#363C98]" />;
                   case "cancelled":
-                    return <XCircle size={14} className="text-red-500" />;
+                    return <XCircle size={14} className="text-[#9f4e63]" />;
                   default:
-                    return <AlertCircle size={14} className="text-yellow-500" />;
+                    return <AlertCircle size={14} className="text-[#FF690B]" />;
                 }
               };
 
               const getPriorityColor = () => {
                 switch (task.priority) {
                   case "urgent":
-                    return "text-red-600 dark:text-red-400";
+                    return "text-[#9f4e63] dark:text-[#9f4e63]";
                   case "high":
-                    return "text-orange-600 dark:text-orange-400";
+                    return "text-[#FF690B] dark:text-[#FF690B]";
                   case "medium":
-                    return "text-yellow-600 dark:text-yellow-400";
+                    return "text-[#FF690B] dark:text-[#FF690B]";
                   default:
-                    return "text-gray-600 dark:text-gray-400";
+                    return "text-foreground dark:text-muted-foreground";
                 }
               };
 
               return (
                 <div
                   key={task.id}
-                  className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
+                  className="border-border rounded-lg border bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         {getStatusIcon()}
-                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{task.title}</span>
+                        <span className="text-foreground text-sm font-semibold dark:text-gray-100">{task.title}</span>
                       </div>
                       {task.description && (
-                        <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">{task.description}</p>
+                        <p className="text-foreground dark:text-muted-foreground mt-1 text-xs">{task.description}</p>
                       )}
-                      <div className="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-muted-foreground dark:text-muted-foreground mt-2 flex items-center gap-3 text-xs">
                         <span className={getPriorityColor()}>
                           {task.priority === "urgent"
                             ? "Urgente"
@@ -653,47 +657,47 @@ export default function FichaTecnica() {
       {/* Estadísticas del Chat */}
       {stats && (
         <div className="flex flex-col gap-3">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+          <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold dark:text-gray-300">
             <TrendingUp size={16} />
             Estadísticas
           </h3>
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/30">
+            <div className="rounded-lg bg-[#e7e6ff] p-3 dark:bg-blue-900/30">
               <div className="flex items-center gap-2">
-                <MessageSquare size={14} className="text-blue-600 dark:text-blue-400" />
+                <MessageSquare size={14} className="text-[#363C98] dark:text-[#363C98]" />
                 <div>
-                  <p className="text-lg font-bold text-blue-800 dark:text-blue-200">{stats.totalConversations}</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">Conversaciones</p>
+                  <p className="text-lg font-bold text-[#363C98] dark:text-[#363C98]">{stats.totalConversations}</p>
+                  <p className="text-xs text-[#363C98] dark:text-[#363C98]">Conversaciones</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900/30">
+            <div className="rounded-lg bg-[#e4f0ea] p-3 dark:bg-green-900/30">
               <div className="flex items-center gap-2">
-                <Circle size={14} className="text-green-600 dark:text-green-400" />
+                <Circle size={14} className="text-[#2f855a] dark:text-[#2f855a]" />
                 <div>
-                  <p className="text-lg font-bold text-green-800 dark:text-green-200">{stats.unreadMessages}</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">No leídos</p>
+                  <p className="text-lg font-bold text-[#2f855a] dark:text-[#2f855a]">{stats.unreadMessages}</p>
+                  <p className="text-xs text-[#2f855a] dark:text-[#2f855a]">No leídos</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg bg-purple-100 p-3 dark:bg-purple-900/30">
+            <div className="rounded-lg bg-[#e8d8de] p-3 dark:bg-purple-900/30">
               <div className="flex items-center gap-2">
-                <Users size={14} className="text-purple-600 dark:text-purple-400" />
+                <Users size={14} className="text-[#9f4e63] dark:text-[#9f4e63]" />
                 <div>
-                  <p className="text-lg font-bold text-purple-800 dark:text-purple-200">{stats.activeConversations}</p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400">Activas</p>
+                  <p className="text-lg font-bold text-[#9f4e63] dark:text-[#9f4e63]">{stats.activeConversations}</p>
+                  <p className="text-xs text-[#9f4e63] dark:text-[#9f4e63]">Activas</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg bg-orange-100 p-3 dark:bg-orange-900/30">
+            <div className="rounded-lg bg-[#FFF0E7] p-3 dark:bg-orange-900/30">
               <div className="flex items-center gap-2">
-                <Clock size={14} className="text-orange-600 dark:text-orange-400" />
+                <Clock size={14} className="text-[#FF690B] dark:text-[#FF690B]" />
                 <div>
-                  <p className="text-lg font-bold text-orange-800 dark:text-orange-200">{stats.messagesToday}</p>
-                  <p className="text-xs text-orange-600 dark:text-orange-400">Hoy</p>
+                  <p className="text-lg font-bold text-[#FF690B] dark:text-[#FF690B]">{stats.messagesToday}</p>
+                  <p className="text-xs text-[#FF690B] dark:text-[#FF690B]">Hoy</p>
                 </div>
               </div>
             </div>
@@ -754,7 +758,7 @@ export default function FichaTecnica() {
               disabled={
                 (completingChat && isCompleteButton) || (reassigningTicket && (isReassignTicket || isReassignChat))
               }
-              className="w-full justify-center bg-orange-400/20 text-orange-800 hover:bg-orange-400/30 hover:text-orange-900 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-orange-500/20 dark:text-orange-300 dark:hover:bg-orange-500/30"
+              className="w-full justify-center bg-[#FF690B]/20 text-[#FF690B] hover:bg-[#FF690B]/30 hover:text-[#FF690B] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#FF690B]/20 dark:text-[#FF690B] dark:hover:bg-[#FF690B]/30"
             >
               {completingChat && isCompleteButton ? (
                 <>
@@ -776,8 +780,8 @@ export default function FichaTecnica() {
 
       {/* Mensaje de error */}
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
-          <p className="text-sm text-red-600 dark:text-red-400">Error cargando información</p>
+        <div className="rounded-lg bg-[#e8d8de] p-3 dark:bg-red-900/20">
+          <p className="text-sm text-[#9f4e63] dark:text-[#9f4e63]">Error cargando información</p>
         </div>
       )}
 
