@@ -15,6 +15,7 @@ import {
   Dumbbell,
   BarChart3,
   Contact,
+  BadgePercent,
   type LucideIcon,
 } from "lucide-react";
 
@@ -116,6 +117,12 @@ export const sidebarItems: NavGroup[] = [
         title: "Leads",
         url: "/dashboard/leads",
         icon: Contact,
+        isNew: true,
+      },
+      {
+        title: "Downsell",
+        url: "/dashboard/downsell",
+        icon: BadgePercent,
         isNew: true,
       },
     ],
