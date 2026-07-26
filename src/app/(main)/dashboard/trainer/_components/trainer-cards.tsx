@@ -9,29 +9,29 @@
  *
  * ✅ CONECTADO AL BACKEND:
  * - Tareas Completadas: GET /api/v1/admin-panel/tasks/assigned-to-me
- *   → Hook: useTrainerMetrics()
- *   → Muestra: % de tareas completadas, total de tareas
+ * → Hook: useTrainerMetrics()
+ * → Muestra: % de tareas completadas, total de tareas
  *
  * - Clientes Activos: GET /api/v1/admin-panel/advices
- *   → Hook: useClientesStats()
- *   → Muestra: Total de clientes activos con asesorías de entrenamiento
+ * → Hook: useClientesStats()
+ * → Muestra: Total de clientes activos con asesorías de entrenamiento
  *
  * ❌ SIN CONEXIÓN AL BACKEND (MOCK DATA):
  * - Sesiones Completadas: Sin endpoint disponible
- *   → Endpoint necesario: GET /api/v1/metricas/sesiones
- *   → Datos: clientesEntrenamientoData (mock)
+ * → Endpoint necesario: GET /api/v1/metricas/sesiones
+ * → Datos: clientesEntrenamientoData (mock)
  *
  * - Series Completadas: Sin endpoint disponible
- *   → Endpoint necesario: GET /api/v1/metricas/series
- *   → Datos: clientesEntrenamientoData (mock)
+ * → Endpoint necesario: GET /api/v1/metricas/series
+ * → Datos: clientesEntrenamientoData (mock)
  *
  * - Volumen Semanal: Sin endpoint disponible
- *   → Endpoint necesario: GET /api/v1/metricas/volumen
- *   → Datos: clientesEntrenamientoData (mock)
+ * → Endpoint necesario: GET /api/v1/metricas/volumen
+ * → Datos: clientesEntrenamientoData (mock)
  *
  * - RPE Medio: Sin endpoint disponible
- *   → Endpoint necesario: GET /api/v1/metricas/rpe
- *   → Datos: clientesEntrenamientoData (mock)
+ * → Endpoint necesario: GET /api/v1/metricas/rpe
+ * → Datos: clientesEntrenamientoData (mock)
  *
  * INDICADORES VISUALES:
  * - 🟢 Icono Wifi verde: Datos en tiempo real del backend
@@ -111,25 +111,24 @@ const calcularMetricasMock = () => {
 const getTendenciaIcon = (tendencia: "subiendo" | "estable" | "bajando") => {
   switch (tendencia) {
     case "subiendo":
-      return <TrendingUp className="size-4 text-emerald-500" />;
+      return <TrendingUp className="size-4 text-[#2f855a]" />;
     case "bajando":
-      return <TrendingDown className="size-4 text-red-500" />;
+      return <TrendingDown className="size-4 text-[#9f4e63]" />;
     default:
-      return <Minus className="size-4 text-slate-500" />;
+      return <Minus className="text-muted-foreground size-4" />;
   }
 };
 
 const getColorPorcentaje = (porcentaje: number) => {
-  if (porcentaje >= 90) return "text-emerald-600";
-  if (porcentaje >= 75) return "text-amber-600";
-  return "text-red-600";
+  if (porcentaje >= 90) return "text-[#2f855a]";
+  if (porcentaje >= 75) return "text-[#FF690B]";
+  return "text-[#9f4e63]";
 };
 
 const getBadgeColorPorcentaje = (porcentaje: number) => {
-  if (porcentaje >= 90)
-    return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400";
-  if (porcentaje >= 75) return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400";
-  return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400";
+  if (porcentaje >= 90) return "sqf-badge-green";
+  if (porcentaje >= 75) return "sqf-badge-orange";
+  return "sqf-badge-wine";
 };
 
 export function TrainerCards() {
@@ -148,13 +147,13 @@ export function TrainerCards() {
   const totalClientes = statsClientes?.total ?? 0;
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       {/* Tareas Completadas - DATOS REALES */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardDescription>Tareas Completadas</CardDescription>
-            <Wifi className="size-4 text-emerald-500" />
+            <Wifi className="size-4 text-[#2f855a]" />
           </div>
           {isLoadingTareas ? (
             <Skeleton className="h-8 w-20" />
@@ -188,11 +187,11 @@ export function TrainerCards() {
       </Card>
 
       {/* Clientes Activos - DATOS REALES */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardDescription>Clientes Activos</CardDescription>
-            <Wifi className="size-4 text-emerald-500" />
+            <Wifi className="size-4 text-[#2f855a]" />
           </div>
           {isLoadingClientes ? (
             <Skeleton className="h-8 w-20" />
@@ -202,10 +201,7 @@ export function TrainerCards() {
             </CardTitle>
           )}
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-            >
+            <Badge variant="outline" className="sqf-badge-indigo">
               <Users className="size-4" />
               Activos
             </Badge>
@@ -224,11 +220,11 @@ export function TrainerCards() {
       </Card>
 
       {/* % Sesiones Completadas - MOCK DATA */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardDescription>Sesiones Completadas</CardDescription>
-            <WifiOff className="size-4 text-amber-500" />
+            <WifiOff className="size-4 text-[#FF690B]" />
           </div>
           <CardTitle
             className={cn(
@@ -251,13 +247,13 @@ export function TrainerCards() {
           </div>
           <div className="text-muted-foreground flex items-center gap-2">
             {metricasMock.clientesSubiendo > 0 && (
-              <span className="flex items-center gap-1 text-emerald-600">
+              <span className="flex items-center gap-1 text-[#2f855a]">
                 <TrendingUp className="size-3" />
                 {metricasMock.clientesSubiendo} mejorando
               </span>
             )}
             {metricasMock.clientesBajando > 0 && (
-              <span className="flex items-center gap-1 text-red-600">
+              <span className="flex items-center gap-1 text-[#9f4e63]">
                 <TrendingDown className="size-3" />
                 {metricasMock.clientesBajando} bajando
               </span>
@@ -267,11 +263,11 @@ export function TrainerCards() {
       </Card>
 
       {/* Series Hechas/Plan - MOCK DATA */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardDescription>Series Completadas</CardDescription>
-            <WifiOff className="size-4 text-amber-500" />
+            <WifiOff className="size-4 text-[#FF690B]" />
           </div>
           <CardTitle
             className={cn(
@@ -297,20 +293,17 @@ export function TrainerCards() {
       </Card>
 
       {/* Volumen Semanal - MOCK DATA */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardDescription>Volumen Semanal</CardDescription>
-            <WifiOff className="size-4 text-amber-500" />
+            <WifiOff className="size-4 text-[#FF690B]" />
           </div>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {(metricasMock.volumenTotal / 1000).toFixed(1)}t
           </CardTitle>
           <CardAction>
-            <Badge
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-            >
+            <Badge variant="outline" className="sqf-badge-indigo">
               <Dumbbell className="size-4" />
               Volumen
             </Badge>
@@ -325,20 +318,20 @@ export function TrainerCards() {
       </Card>
 
       {/* RPE Medio - MOCK DATA */}
-      <Card className="@container/card">
+      <Card className="sqf-metric-card @container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardDescription>RPE Medio</CardDescription>
-            <WifiOff className="size-4 text-amber-500" />
+            <WifiOff className="size-4 text-[#FF690B]" />
           </div>
           <CardTitle
             className={cn(
               "text-2xl font-semibold tabular-nums @[250px]/card:text-3xl",
               parseFloat(metricasMock.rpeMedio) >= 8
-                ? "text-red-600"
+                ? "text-[#9f4e63]"
                 : parseFloat(metricasMock.rpeMedio) >= 7
-                  ? "text-amber-600"
-                  : "text-emerald-600",
+                  ? "text-[#FF690B]"
+                  : "text-[#2f855a]",
             )}
           >
             {metricasMock.rpeMedio}
@@ -348,10 +341,10 @@ export function TrainerCards() {
               variant="outline"
               className={cn(
                 parseFloat(metricasMock.rpeMedio) >= 8
-                  ? "border-red-200 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400"
+                  ? "sqf-badge-wine"
                   : parseFloat(metricasMock.rpeMedio) >= 7
-                    ? "border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
+                    ? "sqf-badge-orange"
+                    : "sqf-badge-green",
               )}
             >
               <Gauge className="size-4" />

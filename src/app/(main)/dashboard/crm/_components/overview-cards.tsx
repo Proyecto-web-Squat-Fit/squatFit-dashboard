@@ -44,7 +44,7 @@ export function OverviewCards() {
         </CardContent>
         <CardFooter className="flex items-center justify-between">
           <span className="text-xl font-semibold tabular-nums">635</span>
-          <span className="text-sm font-medium text-green-500">+54.6%</span>
+          <span className="text-sm font-medium text-[#2f855a]">+54.6%</span>
         </CardFooter>
       </Card>
 
@@ -82,8 +82,8 @@ export function OverviewCards() {
 
       <Card className="border-primary">
         <CardHeader>
-          <div className="w-fit rounded-lg bg-green-500/10 p-2">
-            <Wallet className="size-5 text-green-500" />
+          <div className="w-fit rounded-lg bg-[#2f855a]/10 p-2">
+            <Wallet className="size-5 text-[#2f855a]" />
           </div>
         </CardHeader>
         <CardContent className="flex size-full flex-col justify-between">
@@ -92,7 +92,7 @@ export function OverviewCards() {
             <CardDescription>Last 6 Months</CardDescription>
           </div>
           <p className="text-2xl font-medium tabular-nums">$56,050</p>
-          <div className="w-fit rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-500">+22.2%</div>
+          <div className="w-fit rounded-md bg-[#2f855a]/10 px-2 py-1 text-xs font-medium text-[#2f855a]">+22.2%</div>
         </CardContent>
       </Card>
 

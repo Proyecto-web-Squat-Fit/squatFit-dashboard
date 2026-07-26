@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { Entrenador } from "@/app/(main)/dashboard/entrenadores/_components/schema";
+import { Entrenador } from "@/app/(main)/dashboard/equipo/_components/schema";
 import {
   EntrenadoresService,
   CreateEntrenadorDto,
@@ -81,6 +81,28 @@ export function useCreateEntrenador() {
     onError: (error: Error) => {
       console.error("Error creando entrenador:", error);
       toast.error(error.message || "Error al crear el entrenador", { id: "create-entrenador" });
+    },
+  });
+}
+
+/**
+ * Hook para cambiar el rol formal del staff (píldora Rol de la tabla Equipo).
+ * Usa el endpoint admin users/edit (campo user.staff_role).
+ */
+export function useUpdateEntrenadorRol() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId, rol }: { userId: string; rol: string }) => {
+      const { UsersService } = await import("@/lib/services/users-service");
+      return UsersService.updateUser({ user_id: userId, staff_role: rol });
+    },
+    onSuccess: (_data, { rol }) => {
+      queryClient.invalidateQueries({ queryKey: entrenadoresKeys.lists() });
+      toast.success(`Rol cambiado a ${rol}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al cambiar el rol");
     },
   });
 }

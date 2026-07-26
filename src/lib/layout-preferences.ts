@@ -12,7 +12,8 @@ export type ContentLayout = (typeof allowedContentLayouts)[number];
 export async function getSidebarVariant(): Promise<SidebarVariant> {
   const cookieStore = await cookies();
   const value = cookieStore.get("sidebar_variant")?.value;
-  return allowedVariants.includes(value as SidebarVariant) ? (value as SidebarVariant) : "inset";
+  // Por defecto "floating": el menú va como panel despegado y redondeado (diseño de María).
+  return allowedVariants.includes(value as SidebarVariant) ? (value as SidebarVariant) : "floating";
 }
 
 export async function getSidebarCollapsible(): Promise<SidebarCollapsible> {

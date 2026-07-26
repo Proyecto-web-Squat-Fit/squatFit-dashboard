@@ -10,17 +10,17 @@ import { formatMessageTime, getInitials } from "@/lib/services/support-service";
 import { TicketPriority, TicketStatus } from "@/lib/services/support-types";
 
 const PRIORITY_CONFIG: Record<TicketPriority, { icon: any; color: string; label: string }> = {
-  low: { icon: Clock, color: "text-blue-500", label: "Baja" },
-  medium: { icon: Clock, color: "text-yellow-500", label: "Media" },
-  high: { icon: AlertCircle, color: "text-orange-500", label: "Alta" },
-  urgent: { icon: AlertCircle, color: "text-red-500", label: "Urgente" },
+  low: { icon: Clock, color: "text-[#363C98]", label: "Baja" },
+  medium: { icon: Clock, color: "text-[#FF690B]", label: "Media" },
+  high: { icon: AlertCircle, color: "text-[#FF690B]", label: "Alta" },
+  urgent: { icon: AlertCircle, color: "text-[#9f4e63]", label: "Urgente" },
 };
 
 const STATUS_CONFIG: Record<TicketStatus, { color: string; label: string }> = {
-  pending: { color: "bg-gray-100 text-gray-700", label: "Pendiente" },
-  in_progress: { color: "bg-blue-100 text-blue-700", label: "En Progreso" },
-  resolved: { color: "bg-green-100 text-green-700", label: "Resuelto" },
-  closed: { color: "bg-gray-100 text-gray-500", label: "Cerrado" },
+  pending: { color: "bg-muted text-foreground", label: "Pendiente" },
+  in_progress: { color: "bg-[#e7e6ff] text-[#363C98]", label: "En Progreso" },
+  resolved: { color: "bg-[#e4f0ea] text-[#2f855a]", label: "Resuelto" },
+  closed: { color: "bg-muted text-muted-foreground", label: "Cerrado" },
 };
 
 export default function TicketList() {
@@ -66,7 +66,7 @@ export default function TicketList() {
 
     return (
       <div className="relative flex-shrink-0">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 text-sm font-semibold text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-[#9f4e63] text-sm font-semibold text-white">
           {getInitials(ticket.user?.email ?? ticket.title)}
         </div>
         {/* Indicador de prioridad */}
@@ -81,9 +81,9 @@ export default function TicketList() {
   const renderTicketInfo = (ticket: any) => (
     <div className="min-w-0 flex-grow overflow-hidden">
       <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">{ticket.title}</p>
+        <p className="text-foreground truncate text-sm font-semibold dark:text-gray-100">{ticket.title}</p>
         {ticket.updated_at && (
-          <span className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500">
+          <span className="text-muted-foreground dark:text-muted-foreground flex-shrink-0 text-xs">
             {formatMessageTime(ticket.updated_at)}
           </span>
         )}
@@ -95,10 +95,12 @@ export default function TicketList() {
         >
           {STATUS_CONFIG[ticket.status as TicketStatus].label}
         </span>
-        <span className="truncate text-xs text-gray-500 dark:text-gray-400">{ticket.category}</span>
+        <span className="text-muted-foreground dark:text-muted-foreground truncate text-xs">{ticket.category}</span>
       </div>
 
-      {ticket.user?.email && <p className="truncate text-xs text-gray-400 dark:text-gray-500">{ticket.user.email}</p>}
+      {ticket.user?.email && (
+        <p className="text-muted-foreground dark:text-muted-foreground truncate text-xs">{ticket.user.email}</p>
+      )}
     </div>
   );
 
@@ -106,7 +108,7 @@ export default function TicketList() {
   const renderTicketMetadata = (ticket: any) => (
     <div className="ml-2 flex flex-shrink-0 flex-col items-end gap-y-1">
       {(ticket.unread ?? 0) > 0 && (
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-sm">
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#9f4e63] text-xs font-bold text-white shadow-sm">
           {ticket.unread > 99 ? "99+" : ticket.unread}
         </div>
       )}
@@ -117,16 +119,16 @@ export default function TicketList() {
   if (loading && tickets.length === 0) {
     return (
       <div className="flex flex-col gap-1 p-2">
-        <div className="flex items-center gap-2 p-2 text-sm text-gray-500">
+        <div className="text-muted-foreground flex items-center gap-2 p-2 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           Cargando tickets...
         </div>
         {[...Array(5)].map((_, i) => (
           <div key={`loading-${i}`} className="flex animate-pulse items-center gap-3 rounded-lg p-2.5">
-            <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+            <div className="bg-muted h-10 w-10 rounded-full dark:bg-gray-700" />
             <div className="flex-grow">
-              <div className="mb-1 h-4 rounded bg-gray-200 dark:bg-gray-700" />
-              <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="bg-muted mb-1 h-4 rounded dark:bg-gray-700" />
+              <div className="bg-muted h-3 w-2/3 rounded dark:bg-gray-700" />
             </div>
           </div>
         ))}
@@ -137,12 +139,12 @@ export default function TicketList() {
   if (error && tickets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center">
-        <div className="mb-2 text-red-500">
+        <div className="mb-2 text-[#9f4e63]">
           <AlertCircle size={24} />
         </div>
-        <p className="mb-2 text-sm text-red-600 dark:text-red-400">Error cargando tickets</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{error}</p>
-        <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
+        <p className="mb-2 text-sm text-[#9f4e63] dark:text-[#9f4e63]">Error cargando tickets</p>
+        <p className="text-muted-foreground dark:text-muted-foreground text-xs">{error}</p>
+        <div className="text-muted-foreground mt-3 flex items-center gap-2 text-xs">
           <Loader2 className="h-3 w-3 animate-spin" />
           Reintentando automáticamente...
         </div>
@@ -153,11 +155,11 @@ export default function TicketList() {
   if (tickets.length === 0 && !loading && !error) {
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center">
-        <div className="mb-2 text-gray-400">
+        <div className="text-muted-foreground mb-2">
           <TicketIcon size={24} />
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">No hay tickets asignados</p>
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+        <p className="text-muted-foreground dark:text-muted-foreground text-sm">No hay tickets asignados</p>
+        <p className="text-muted-foreground dark:text-muted-foreground mt-1 text-xs">
           Los tickets aparecerán aquí cuando sean asignados
         </p>
       </div>
@@ -168,17 +170,17 @@ export default function TicketList() {
     <div className="flex flex-col gap-1 p-2">
       {/* Indicador de estado */}
       <div className="flex items-center justify-between px-2 py-1 text-xs">
-        <span className="text-gray-500 dark:text-gray-400">{tickets.length} tickets</span>
+        <span className="text-muted-foreground dark:text-muted-foreground">{tickets.length} tickets</span>
         <div className="flex items-center gap-1">
           {isConnected ? (
             <>
-              <CheckCircle size={12} className="text-green-500" />
-              <span className="text-green-600 dark:text-green-400">Conectado</span>
+              <CheckCircle size={12} className="text-[#2f855a]" />
+              <span className="text-[#2f855a] dark:text-[#2f855a]">Conectado</span>
             </>
           ) : (
             <>
-              <AlertCircle size={12} className="text-red-500" />
-              <span className="text-red-600 dark:text-red-400">Desconectado</span>
+              <AlertCircle size={12} className="text-[#9f4e63]" />
+              <span className="text-[#9f4e63] dark:text-[#9f4e63]">Desconectado</span>
             </>
           )}
         </div>
@@ -189,9 +191,9 @@ export default function TicketList() {
         <div
           key={ticket.id}
           className={clsx("flex cursor-pointer items-center gap-3 rounded-lg p-2.5 transition-all duration-150", {
-            "bg-purple-100/70 shadow-sm dark:bg-purple-900/40": selectedTicket?.id === ticket.id,
-            "hover:bg-gray-100/80 dark:hover:bg-gray-800/60": selectedTicket?.id !== ticket.id,
-            "border-l-2 border-red-500": (ticket.unread ?? 0) > 0,
+            "bg-[#e8d8de]/70 shadow-sm dark:bg-purple-900/40": selectedTicket?.id === ticket.id,
+            "hover:bg-muted/80 dark:hover:bg-gray-800/60": selectedTicket?.id !== ticket.id,
+            "border-l-2 border-[#9f4e63]": (ticket.unread ?? 0) > 0,
           })}
           onClick={() => selectTicket(ticket.id)}
         >
@@ -204,11 +206,13 @@ export default function TicketList() {
       {/* No hay resultados de búsqueda */}
       {searchQuery && sortedTickets.length === 0 && (
         <div className="flex flex-col items-center justify-center p-4 text-center">
-          <div className="mb-2 text-gray-400">
+          <div className="text-muted-foreground mb-2">
             <TicketIcon size={24} />
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">No se encontraron tickets</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">Intenta con otros términos de búsqueda</p>
+          <p className="text-muted-foreground dark:text-muted-foreground text-sm">No se encontraron tickets</p>
+          <p className="text-muted-foreground dark:text-muted-foreground text-xs">
+            Intenta con otros términos de búsqueda
+          </p>
         </div>
       )}
     </div>

@@ -30,9 +30,41 @@ interface NavMainProps {
   readonly items: readonly NavGroup[];
 }
 
+// Item seleccionado en naranja de marca (texto + icono, que hereda el color).
+const ITEM_ACTIVO = "data-[active=true]:text-[#FF690B]";
+
 const IsComingSoon = () => (
   <span className="ml-auto rounded-md bg-gray-200 px-2 py-1 text-xs dark:text-gray-800">Soon</span>
 );
+
+// Icono del item: usa el PNG/SVG propio si está definido; si no, cae al icono
+// lucide. Se pinta con `mask-image` + `bg-current`, así la silueta hereda el
+// color del botón sin depender del color del archivo: índigo de marca en
+// reposo y naranja al estar seleccionado, igual que el botón de menú de la web.
+// Además, en activo se usa la versión rellena (`iconActive`).
+const NavIcon = ({ item, active }: { item: NavMainItem; active: boolean }) => {
+  if (item.iconNormal) {
+    const src = active && item.iconActive ? item.iconActive : item.iconNormal;
+    const maskUrl = `url(${src})`;
+    return (
+      <span
+        aria-hidden
+        className="size-6 shrink-0 bg-current"
+        style={{
+          maskImage: maskUrl,
+          WebkitMaskImage: maskUrl,
+          maskRepeat: "no-repeat",
+          WebkitMaskRepeat: "no-repeat",
+          maskPosition: "center",
+          WebkitMaskPosition: "center",
+          maskSize: "contain",
+          WebkitMaskSize: "contain",
+        }}
+      />
+    );
+  }
+  return item.icon ? <item.icon /> : null;
+};
 
 const NavItemExpanded = ({
   item,
@@ -49,11 +81,12 @@ const NavItemExpanded = ({
         <CollapsibleTrigger asChild>
           {item.subItems ? (
             <SidebarMenuButton
+              className={ITEM_ACTIVO}
               disabled={item.comingSoon}
               isActive={isActive(item.url, item.subItems)}
               tooltip={item.title}
             >
-              {item.icon && <item.icon />}
+              <NavIcon item={item} active={isActive(item.url, item.subItems)} />
               <span>{item.title}</span>
               {item.comingSoon && <IsComingSoon />}
               <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -61,12 +94,13 @@ const NavItemExpanded = ({
           ) : (
             <SidebarMenuButton
               asChild
+              className={ITEM_ACTIVO}
               aria-disabled={item.comingSoon}
               isActive={isActive(item.url)}
               tooltip={item.title}
             >
               <Link href={item.url} target={item.newTab ? "_blank" : undefined}>
-                {item.icon && <item.icon />}
+                <NavIcon item={item} active={isActive(item.url)} />
                 <span>{item.title}</span>
                 {item.comingSoon && <IsComingSoon />}
               </Link>
@@ -102,8 +136,6 @@ const NavItemCollapsed = ({
   item: NavMainItem;
   isActive: (url: string, subItems?: NavMainItem["subItems"]) => boolean;
 }) => {
-  console.log(item);
-
   // Si tiene subItems, mostrar un dropdown menu
   if (item.subItems && item.subItems.length > 0) {
     return (
@@ -111,11 +143,12 @@ const NavItemCollapsed = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
+              className={ITEM_ACTIVO}
               disabled={item.comingSoon}
               tooltip={item.title}
               isActive={isActive(item.url, item.subItems)}
             >
-              {item.icon && <item.icon />}
+              <NavIcon item={item} active={isActive(item.url, item.subItems)} />
               <span>{item.title}</span>
               <ChevronRight />
             </SidebarMenuButton>
@@ -140,8 +173,13 @@ const NavItemCollapsed = ({
   return (
     <SidebarMenuItem key={item.title}>
       <Link href={item.url}>
-        <SidebarMenuButton disabled={item.comingSoon} tooltip={item.title} isActive={isActive(item.url, item.subItems)}>
-          {item.icon && <item.icon />}
+        <SidebarMenuButton
+          className={ITEM_ACTIVO}
+          disabled={item.comingSoon}
+          tooltip={item.title}
+          isActive={isActive(item.url, item.subItems)}
+        >
+          <NavIcon item={item} active={isActive(item.url, item.subItems)} />
           <span>{item.title}</span>
           <ChevronRight />
         </SidebarMenuButton>
@@ -153,7 +191,6 @@ const NavItemCollapsed = ({
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
-  console.log(items);
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {

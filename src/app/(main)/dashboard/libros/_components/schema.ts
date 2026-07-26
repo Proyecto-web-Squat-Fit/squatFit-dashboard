@@ -25,6 +25,7 @@ export const libroApiSchema = z.object({
   subtitle: z.string().nullable().optional(),
   image: z.string().nullable().optional(),
   versions: z.array(libroVersionSchema).optional(),
+  created_at: z.string().optional(),
 });
 
 // Schema adaptado para la UI

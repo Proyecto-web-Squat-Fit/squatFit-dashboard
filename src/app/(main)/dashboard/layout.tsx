@@ -18,7 +18,9 @@ import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+  // Sin cookie el menú arranca ABIERTO; solo se colapsa si el usuario lo dejó
+  // así explícitamente (la cookie se escribe al pulsar el botón de menú).
+  const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
   const sidebarVariant = await getSidebarVariant();
   const sidebarCollapsible = await getSidebarCollapsible();
@@ -41,7 +43,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <div className="flex items-center gap-1 lg:gap-2">
                 <SidebarTrigger className="-ml-1" />
               </div>
-              <div className="bg-sidebar-accent/80 flex items-center gap-2 rounded-lg px-2 py-1.5">
+              <div className="bg-sidebar-accent/80 flex items-center gap-2 rounded-lg border border-[#C2C0FC] px-2 py-1.5">
                 {/* <LayoutControls contentLayout={contentLayout} variant={sidebarVariant} collapsible={sidebarCollapsible} /> */}
                 <NotificationsBell />
                 <ThemeSwitcher />

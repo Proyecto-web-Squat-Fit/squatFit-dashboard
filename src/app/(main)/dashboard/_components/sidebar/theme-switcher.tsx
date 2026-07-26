@@ -9,7 +9,11 @@ export function ThemeSwitcher() {
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <Button size="icon" className="size-10" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+    <Button
+      size="icon"
+      className="size-10 border-0 shadow-none ring-0"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+    >
       {resolvedTheme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
     </Button>
   );

@@ -18,14 +18,23 @@ import {
 
 import { Curso } from "./schema";
 
+function formatCursoDate(iso?: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// Pastillas de estado con la paleta de marca (verde #2F855A, naranja #FF690B,
+// lavanda #EBEAF2/índigo para neutro).
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Activo":
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">{status}</Badge>;
+      return <Badge className="border-0 bg-[#E3EFE8] text-[#2F855A] hover:bg-[#E3EFE8]">{status}</Badge>;
     case "Inactivo":
-      return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">{status}</Badge>;
+      return <Badge className="border-0 bg-[#E8D8DE] text-[#9F4E63] hover:bg-[#E8D8DE]">{status}</Badge>;
     case "En Desarrollo":
-      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">{status}</Badge>;
+      return <Badge className="border-0 bg-[#FFF0E7] text-[#FF690B] hover:bg-[#FFF0E7]">{status}</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -35,19 +44,19 @@ const getLevelBadge = (level: string) => {
   switch (level) {
     case "Principiante":
       return (
-        <Badge variant="outline" className="border-blue-300 text-blue-700">
+        <Badge variant="outline" className="border-[#C2C0FC] text-[#363C98]">
           {level}
         </Badge>
       );
     case "Intermedio":
       return (
-        <Badge variant="outline" className="border-orange-300 text-orange-700">
+        <Badge variant="outline" className="border-[#FFB489] text-[#FF690B]">
           {level}
         </Badge>
       );
     case "Avanzado":
       return (
-        <Badge variant="outline" className="border-red-300 text-red-700">
+        <Badge variant="outline" className="border-[#E8D8DE] text-[#9F4E63]">
           {level}
         </Badge>
       );
@@ -83,6 +92,7 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Curso" />,
+    meta: { label: "Nombre del curso" },
     cell: ({ row }) => (
       <div className="flex flex-col">
         <span className="font-medium">{row.original.name}</span>
@@ -93,11 +103,13 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   },
   {
     accessorKey: "instructor",
+    meta: { label: "Instructor" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Instructor" />,
     cell: ({ row }) => <span className="text-sm">{row.original.instructor}</span>,
   },
   {
     accessorKey: "category",
+    meta: { label: "Categoría" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" />,
     cell: ({ row }) => <Badge variant="outline">{row.original.category}</Badge>,
     filterFn: (row, id, value) => {
@@ -106,6 +118,7 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   },
   {
     accessorKey: "level",
+    meta: { label: "Nivel" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Nivel" />,
     cell: ({ row }) => getLevelBadge(row.original.level),
     filterFn: (row, id, value) => {
@@ -115,6 +128,7 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   {
     accessorKey: "status",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
+    meta: { label: "Estado" },
     cell: ({ row }) => getStatusBadge(row.original.status),
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
@@ -122,6 +136,7 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   },
   {
     accessorKey: "students",
+    meta: { label: "Estudiantes" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Estudiantes" />,
     cell: ({ row }) => (
       <div className="flex items-center gap-1">
@@ -132,6 +147,7 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   {
     accessorKey: "price",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Precio" />,
+    meta: { label: "Precio" },
     cell: ({ row }) => (
       <span className="font-medium tabular-nums">
         {row.original.currency}
@@ -141,8 +157,16 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   },
   {
     accessorKey: "duration",
+    meta: { label: "Duración" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Duración" />,
     cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.duration}</span>,
+  },
+  {
+    accessorKey: "createdAt",
+    meta: { label: "Fecha" },
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+    accessorFn: (row) => row.createdAt ?? "",
+    cell: ({ row }) => <span className="text-muted-foreground text-sm">{formatCursoDate(row.original.createdAt)}</span>,
   },
   {
     id: "actions",

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import {
   Sidebar,
   SidebarContent,
@@ -8,7 +10,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { APP_CONFIG } from "@/config/app-config";
 import { useAuth } from "@/contexts/auth-context";
 import { getSidebarItemsForRole } from "@/navigation/sidebar/sidebar-items";
 
@@ -23,18 +24,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="pt-10 pb-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="h-auto hover:bg-transparent active:bg-transparent">
-              <a href="#" className="flex flex-col items-center justify-center gap-3">
-                <div className="flex flex-col items-center justify-center font-black tracking-normal select-none">
-                  <span className="text-[2.25rem] leading-none text-[#3b46c2] group-data-[collapsible=icon]:text-[1.5rem]">
-                    SQ
-                  </span>
-                  <span className="mt-2 text-[2.25rem] leading-none text-[#ff6a00] group-data-[collapsible=icon]:mt-1 group-data-[collapsible=icon]:text-[1.5rem]">
-                    FT
-                  </span>
-                </div>
-                <span className="text-center text-lg leading-tight font-bold group-data-[collapsible=icon]:hidden">
-                  {APP_CONFIG.name}
+            <SidebarMenuButton
+              asChild
+              className="!h-auto hover:bg-transparent active:bg-transparent data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <a href="#" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+                <Image
+                  src="/logo-squadfit-azul.png"
+                  width={52}
+                  height={52}
+                  alt="Squad Fit"
+                  className="shrink-0 rounded-md"
+                />
+                <span className="text-secondary-foreground text-lg leading-tight font-bold group-data-[collapsible=icon]:hidden">
+                  Squad Fit
+                  <br />
+                  Back Office
                 </span>
               </a>
             </SidebarMenuButton>

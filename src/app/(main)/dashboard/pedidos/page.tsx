@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { OrdersView } from "./_components/orders-view";
 
 export const metadata: Metadata = {
-  title: "Pedidos | Squat Fit",
+  title: "Pedidos | Squad Fit",
   description: "Gestión de pedidos: estados, método de pago, origen y reembolsos",
 };
 

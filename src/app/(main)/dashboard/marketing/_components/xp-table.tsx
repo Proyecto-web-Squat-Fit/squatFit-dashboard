@@ -224,7 +224,7 @@ export function XPTable() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Star className="size-5 text-amber-500" />
-          Sistema de XP / Créditos Squat Fit
+          Sistema de XP / Créditos Squad Fit
         </CardTitle>
         <CardDescription>Tabla de puntos por acciones y logros de los usuarios</CardDescription>
       </CardHeader>

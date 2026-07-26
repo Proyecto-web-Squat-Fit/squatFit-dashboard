@@ -20,13 +20,13 @@ const Summary: React.FC = () => {
         <Card className="flex h-full flex-col">
           <CardHeader className="flex justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-10 items-center justify-center rounded-md bg-orange-100">
-                <Clock3 className="h-6 w-6 text-orange-500" />
+              <div className="flex h-8 w-10 items-center justify-center rounded-md bg-[#FFF0E7]">
+                <Clock3 className="h-6 w-6 text-[#FF690B]" />
               </div>
-              <span className="text-base font-semibold text-gray-700">Spending Summary</span>
+              <span className="text-foreground text-base font-semibold">Spending Summary</span>
             </div>
             <Select defaultValue="last-week">
-              <SelectTrigger className="h-8 border border-orange-500 bg-none text-sm shadow-none focus:border-orange-500 focus:ring-0">
+              <SelectTrigger className="h-8 border border-[#FF690B] bg-none text-sm shadow-none focus:border-[#FF690B] focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -46,27 +46,27 @@ const Summary: React.FC = () => {
             <div className="flex">
               <div className="flex items-center justify-center gap-4">
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex h-8 w-10 items-center justify-center rounded-md bg-green-100">
-                    <ShoppingBag className="h-6 w-6 text-green-500" />
+                  <div className="flex h-8 w-10 items-center justify-center rounded-md bg-[#e4f0ea]">
+                    <ShoppingBag className="h-6 w-6 text-[#2f855a]" />
                   </div>
-                  <span className="text-md text-gray-500">Shopping</span>
-                  <span className="text-xs text-gray-500">$900</span>
+                  <span className="text-md text-muted-foreground">Shopping</span>
+                  <span className="text-muted-foreground text-xs">$900</span>
                 </div>
                 <Separator orientation="vertical" />
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex h-8 w-10 items-center justify-center rounded-md bg-orange-100">
-                    <ReceiptText className="h-6 w-6 text-orange-500" />
+                  <div className="flex h-8 w-10 items-center justify-center rounded-md bg-[#FFF0E7]">
+                    <ReceiptText className="h-6 w-6 text-[#FF690B]" />
                   </div>
-                  <span className="text-md text-gray-500">Utilities</span>
-                  <span className="text-xs text-gray-500">$600</span>
+                  <span className="text-md text-muted-foreground">Utilities</span>
+                  <span className="text-muted-foreground text-xs">$600</span>
                 </div>
                 <Separator orientation="vertical" />
                 <div className="flex flex-col items-center gap-1">
-                  <div className="flex h-8 w-10 items-center justify-center rounded-md bg-gray-100">
-                    <CircleDollarSign className="h-6 w-6 text-gray-500" />
+                  <div className="bg-muted flex h-8 w-10 items-center justify-center rounded-md">
+                    <CircleDollarSign className="text-muted-foreground h-6 w-6" />
                   </div>
-                  <span className="text-md text-gray-500">Others</span>
-                  <span className="text-xs text-gray-500">$300</span>
+                  <span className="text-md text-muted-foreground">Others</span>
+                  <span className="text-muted-foreground text-xs">$300</span>
                 </div>
               </div>
             </div>
@@ -80,12 +80,12 @@ const Summary: React.FC = () => {
         <Card className="flex h-full flex-col">
           <CardHeader className="flex justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-10 items-center justify-center rounded-md bg-orange-100">
-                <RefreshCw className="h-6 w-6 text-orange-500" />
+              <div className="flex h-8 w-10 items-center justify-center rounded-md bg-[#FFF0E7]">
+                <RefreshCw className="h-6 w-6 text-[#FF690B]" />
               </div>
-              <span className="text-base font-semibold text-gray-700">Exchange</span>
+              <span className="text-foreground text-base font-semibold">Exchange</span>
             </div>
-            <Button className="border border-orange-300 bg-white py-0 text-gray-600 hover:bg-white">Currencies</Button>
+            <Button className="text-foreground border border-[#FF690B] bg-white py-0 hover:bg-white">Currencies</Button>
           </CardHeader>
 
           <CardContent>
@@ -102,7 +102,7 @@ const Summary: React.FC = () => {
                     </SelectContent>
                   </Select>
                   <Separator orientation="vertical" className="h-6" />
-                  <ArrowLeftRight className="h-5 w-5 text-orange-500" />
+                  <ArrowLeftRight className="h-5 w-5 text-[#FF690B]" />
                   <Separator orientation="vertical" className="h-6" />
                   <Select defaultValue="EUR">
                     <SelectTrigger className="h-8 min-h-0 cursor-not-allowed border-none bg-transparent px-2 text-sm opacity-60 shadow-none">
@@ -118,7 +118,7 @@ const Summary: React.FC = () => {
               {/* Main Content */}
               <Separator orientation="horizontal" className="m-0" />
               <div className="flex h-15 flex-col items-center justify-center py-3">
-                <p className="text-xl font-bold text-orange-500">$100.00</p>
+                <p className="text-xl font-bold text-[#FF690B]">$100.00</p>
                 <p className="text-xs">
                   Available: <span className="font-semibold">$16058.94</span>
                 </p>
@@ -126,7 +126,7 @@ const Summary: React.FC = () => {
 
               {/* Footer */}
               <Separator orientation="horizontal" className="m-0" />
-              <div className="flex h-10 w-full items-center justify-center bg-gradient-to-br from-orange-100 to-white">
+              <div className="flex h-10 w-full items-center justify-center bg-gradient-to-br from-[#FFF0E7] to-white">
                 <p className="m-0 w-full text-center text-sm leading-none">
                   1 USD = <span className="font-semibold">0.94 Eur</span>
                 </p>
@@ -149,7 +149,7 @@ const Summary: React.FC = () => {
                 90.7
               </span>
             </p>
-            <Button className="w-full border border-orange-300 bg-white pt-2 font-semibold text-gray-600 hover:bg-white">
+            <Button className="text-foreground w-full border border-[#FF690B] bg-white pt-2 font-semibold hover:bg-white">
               <RefreshCw className="h-5 w-5" />
               <span>Exchange</span>
             </Button>

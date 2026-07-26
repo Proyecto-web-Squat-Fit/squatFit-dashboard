@@ -1,4 +1,4 @@
-import { Entrenador } from "@/app/(main)/dashboard/entrenadores/_components/schema";
+import { Entrenador } from "@/app/(main)/dashboard/equipo/_components/schema";
 import { getAuthToken } from "@/lib/auth/auth-utils";
 
 // ============================================================================

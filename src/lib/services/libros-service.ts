@@ -204,6 +204,7 @@ export class LibrosService {
       subtitle: apiLibro.subtitle || "Sin descripción",
       image: validImage,
       versions: apiLibro.versions || [],
+      createdAt: apiLibro.created_at,
     };
   }
 

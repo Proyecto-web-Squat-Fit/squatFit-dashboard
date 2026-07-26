@@ -50,7 +50,7 @@ function getLevelBadgeVariant(level: string): "default" | "secondary" | "outline
 
 function CursoCard({ curso }: { curso: Curso }) {
   return (
-    <Card className="border-primary overflow-hidden transition-shadow hover:shadow-lg">
+    <Card className="overflow-hidden transition-shadow hover:shadow-lg">
       {/* Imagen del curso */}
       <div className="bg-muted relative h-40 w-full overflow-hidden">
         {curso.thumbnail ? (
@@ -116,7 +116,7 @@ export function CursosGrid() {
   const cursosArray = Array.isArray(data) ? data.slice(0, 3) : [];
 
   return (
-    <Card className="border-primary">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BookOpen className="h-5 w-5" />

@@ -4,7 +4,7 @@ import { LibrosCards } from "./_components/libros-cards";
 import { LibrosTable } from "./_components/libros-table";
 
 export const metadata: Metadata = {
-  title: "Libros | Squat Fit",
+  title: "Cocina | Squad Fit",
   description: "Gestión de libros digitales y físicos",
 };
 
