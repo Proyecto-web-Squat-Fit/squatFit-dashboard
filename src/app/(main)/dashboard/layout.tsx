@@ -43,7 +43,9 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <div className="flex items-center gap-1 lg:gap-2">
                 <SidebarTrigger className="-ml-1" />
               </div>
-              <div className="bg-sidebar-accent/80 flex items-center gap-2 rounded-lg border border-[#C2C0FC] px-2 py-1.5">
+              {/* Grupo de acciones (campana, tema, avatar) SIN el pill morado:
+                  integrado limpio en la cabecera (arreglo visual 1 de la spec). */}
+              <div className="flex items-center gap-1.5">
                 {/* <LayoutControls contentLayout={contentLayout} variant={sidebarVariant} collapsible={sidebarCollapsible} /> */}
                 <NotificationsBell />
                 <ThemeSwitcher />

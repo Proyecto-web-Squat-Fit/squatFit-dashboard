@@ -92,7 +92,7 @@ export function CatalogView() {
   return (
     <div className="@container/main flex flex-col gap-5">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Catálogo · Productos</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Catálogo</h1>
         <p className="text-muted-foreground text-sm">
           Qué concede cada producto al comprarse (curso, libro, pack, biblioteca o programa) y su tramo de acceso.
         </p>

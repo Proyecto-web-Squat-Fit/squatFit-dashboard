@@ -126,7 +126,12 @@ export function NotificationsBell() {
   return (
     <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" className="relative size-10" aria-label="Notificaciones">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-foreground/70 hover:text-foreground relative size-9"
+          aria-label="Notificaciones"
+        >
           <Bell className="size-5" />
           {unread.length > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF690B] px-1 text-[10px] font-semibold text-white">

@@ -20,13 +20,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EditablePill } from "@/components/ui/editable-pill";
 import { Input } from "@/components/ui/input";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { usePedidos, useSendPedidoEmail, useUpdatePedidoPayment, useUpdatePedidoStatus } from "@/hooks/use-pedidos";
 import { exportCSV, exportPDF, exportXLSX, type ExportColumn } from "@/lib/export/table-export";
 import type { Pedido, PedidoStatus } from "@/lib/services/pedidos-service";
-
-import { EditablePill } from "@/components/ui/editable-pill";
 
 import { PedidoDetailModal } from "./pedido-detail-modal";
 import { downloadInvoice, downloadShippingInfo } from "./pedido-downloads";
@@ -87,7 +86,7 @@ function RowActions({
       </Button>
       {(pedido.status === "pending" || pedido.status === "processing" || pedido.status === "completed") && (
         <Button variant="ghost" size="icon" className={btnCls} title="Ir al cliente" asChild>
-          <Link href="/dashboard/alumnos">
+          <Link href="/dashboard/usuarios">
             <UserRound className={iconCls} />
           </Link>
         </Button>

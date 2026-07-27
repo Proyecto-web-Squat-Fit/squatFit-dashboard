@@ -1,14 +1,7 @@
-import { EntrenadoresCards } from "./_components/entrenadores-cards";
-import { EntrenadoresTable } from "./_components/entrenadores-table";
+import { redirect } from "next/navigation";
 
+// Reestructura del menú (spec 27-jul): Equipo es ahora la pestaña Empleados dentro de Usuarios.
+// Redirect para no romper los enlaces guardados del equipo.
 export default function Page() {
-  return (
-    <div className="@container/main flex flex-col gap-4 md:gap-6">
-      {/* Tarjetas de resumen */}
-      <EntrenadoresCards />
-
-      {/* Tabla de entrenadores */}
-      <EntrenadoresTable />
-    </div>
-  );
+  redirect("/dashboard/usuarios?tab=empleados");
 }

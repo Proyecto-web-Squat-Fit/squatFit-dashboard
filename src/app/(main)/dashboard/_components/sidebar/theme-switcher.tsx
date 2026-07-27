@@ -11,7 +11,8 @@ export function ThemeSwitcher() {
   return (
     <Button
       size="icon"
-      className="size-10 border-0 shadow-none ring-0"
+      variant="ghost"
+      className="text-foreground/70 hover:text-foreground size-9 border-0 shadow-none ring-0"
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
     >
       {resolvedTheme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}

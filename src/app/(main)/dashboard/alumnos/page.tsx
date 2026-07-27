@@ -1,14 +1,7 @@
-import { AlumnosCards } from "./_components/alumnos-cards";
-import { UsuariosDirectoryTable } from "./_components/usuarios-directory-table";
+import { redirect } from "next/navigation";
 
+// Reestructura del menú (spec 27-jul): Usuarios agrupa ahora Clientes y Empleados (la ficha /alumnos/[id] sigue igual).
+// Redirect para no romper los enlaces guardados del equipo.
 export default function Page() {
-  return (
-    <div className="@container/main flex flex-col gap-4 md:gap-6">
-      {/* Tarjetas de resumen */}
-      <AlumnosCards />
-
-      {/* Directorio de usuarios (diseño: pestañas + asignados + roles) */}
-      <UsuariosDirectoryTable />
-    </div>
-  );
+  redirect("/dashboard/usuarios");
 }
