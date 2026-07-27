@@ -65,7 +65,7 @@ export const LEAD_CONVERT_READY = true;
  * mergear/desplegar. Encender al desplegar; mientras tanto la autodetección
  * (campos presentes en el GET) también lo activa sola.
  */
-export const LEAD_PIPELINE_V3_READY = false;
+export const LEAD_PIPELINE_V3_READY = true;
 
 /** Columnas del kanban «Pipeline comercial» (en orden). */
 export const PIPELINE_STATES = [
@@ -458,7 +458,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Programa Transfórmate",
     intake_date: "2026-07-19T10:30:00Z",
     is_customer: false,
-    opportunity_value: 1200, tags: ["caliente"],
+    opportunity_value: 1200,
+    tags: ["caliente"],
     setter: "María",
     notes: [],
     history: [{ id: "h1", event: "Lead creado desde Instagram (DM)", created_at: "2026-07-19T10:30:00Z" }],
@@ -474,7 +475,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Curso La Mujer",
     intake_date: "2026-07-17T08:05:00Z",
     is_customer: false,
-    opportunity_value: 300, tags: [],
+    opportunity_value: 300,
+    tags: [],
     setter: "Laura",
     notes: [],
     history: [{ id: "h2", event: "Lead creado desde formulario web", created_at: "2026-07-17T08:05:00Z" }],
@@ -491,7 +493,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Asesoría 1:1",
     intake_date: "2026-07-16T11:00:00Z",
     is_customer: false,
-    opportunity_value: 600, tags: ["VIP"],
+    opportunity_value: 600,
+    tags: ["VIP"],
     setter: "María",
     notes: [
       { id: "n1", body: "Le envié el enlace de la llamada.", author: "Staff", created_at: "2026-07-17T16:40:00Z" },
@@ -518,7 +521,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Curso La Mujer",
     intake_date: "2026-07-15T08:00:00Z",
     is_customer: false,
-    opportunity_value: 300, tags: ["caliente"],
+    opportunity_value: 300,
+    tags: ["caliente"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [],
@@ -535,7 +539,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Programa Transfórmate",
     intake_date: "2026-07-10T10:00:00Z",
     is_customer: false,
-    opportunity_value: 1900, tags: [],
+    opportunity_value: 1900,
+    tags: [],
     setter: "María",
     closer: "Hamlet",
     notes: [],
@@ -553,7 +558,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Programa Transfórmate",
     intake_date: "2026-07-08T09:30:00Z",
     is_customer: false,
-    opportunity_value: 2400, tags: ["caliente", "VIP"],
+    opportunity_value: 2400,
+    tags: ["caliente", "VIP"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [
@@ -577,7 +583,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Asesoría 1:1",
     intake_date: "2026-07-05T09:00:00Z",
     is_customer: true,
-    opportunity_value: 900, tags: [],
+    opportunity_value: 900,
+    tags: [],
     converted_user_id: "sample-user-paula",
     setter: "María",
     closer: "Hamlet",
@@ -596,7 +603,9 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "precio",
     intake_date: "2026-07-02T13:00:00Z",
     is_customer: false,
-    opportunity_value: 300, lost_reason: "precio", tags: ["objecion-precio"],
+    opportunity_value: 300,
+    lost_reason: "precio",
+    tags: ["objecion-precio"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [
@@ -617,7 +626,9 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "timing",
     intake_date: "2026-06-05T10:00:00Z",
     is_customer: false,
-    opportunity_value: 1200, lost_reason: "timing", tags: [],
+    opportunity_value: 1200,
+    lost_reason: "timing",
+    tags: [],
     setter: "María",
     notes: [
       { id: "n5", body: "Quiere empezar después del verano.", author: "Staff", created_at: "2026-06-12T09:00:00Z" },
@@ -636,7 +647,9 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "confianza",
     intake_date: "2026-05-20T17:00:00Z",
     is_customer: false,
-    opportunity_value: 600, lost_reason: "otro", tags: [],
+    opportunity_value: 600,
+    lost_reason: "otro",
+    tags: [],
     setter: "Laura",
     closer: "Hamlet",
     notes: [],
@@ -653,7 +666,8 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Curso La Mujer",
     intake_date: "2026-06-28T12:00:00Z",
     is_customer: false,
-    lost_reason: "no_contesta", tags: [],
+    lost_reason: "no_contesta",
+    tags: [],
     setter: "María",
     notes: [],
     history: [{ id: "h12", event: "No respondió tras dos intentos", created_at: "2026-07-06T10:00:00Z" }],
@@ -671,7 +685,8 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "precio",
     intake_date: "2026-06-10T09:00:00Z",
     is_customer: false,
-    opportunity_value: 1900, tags: ["caliente"],
+    opportunity_value: 1900,
+    tags: ["caliente"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [
@@ -696,7 +711,8 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "otros",
     intake_date: "2026-07-01T15:00:00Z",
     is_customer: false,
-    opportunity_value: 600, tags: [],
+    opportunity_value: 600,
+    tags: [],
     setter: "María",
     notes: [],
     history: [{ id: "h14", event: "Pendiente de decidir con su pareja", created_at: "2026-07-09T18:00:00Z" }],
@@ -765,7 +781,12 @@ export class LeadsService {
     if (!LEADS_API_READY || query?.demo) {
       // Copias frescas: el store es mutable y, si devolviéramos las mismas
       // referencias, react-query/useMemo no verían los cambios tras mutar.
-      return applyFilters(getSampleStore(), query).map((l) => ({ ...l, notes: [...l.notes], history: [...l.history], tags: [...l.tags] }));
+      return applyFilters(getSampleStore(), query).map((l) => ({
+        ...l,
+        notes: [...l.notes],
+        history: [...l.history],
+        tags: [...l.tags],
+      }));
     }
     // El backend valida con forbidNonWhitelisted: SOLO acepta los params del
     // QueryLeadsDTO (status, origin, assigned_to, objection, intake_from/to,
@@ -902,7 +923,8 @@ export class LeadsService {
     // cuando el contrato nuevo está activo (flag o autodetección). Si SOLO se
     // pedían campos v3, avisar en vez de fingir que se guardó.
     const v3 = leadsPipelineV3Enabled();
-    const wantsV3 = patch.opportunity_value !== undefined || patch.lost_reason !== undefined || patch.tags !== undefined;
+    const wantsV3 =
+      patch.opportunity_value !== undefined || patch.lost_reason !== undefined || patch.tags !== undefined;
     if (wantsV3 && !v3 && patch.state === undefined && patch.objection === undefined) {
       throw new Error(
         "El valor, las etiquetas y el motivo de pérdida se guardarán cuando el backend (rama feature/crm-pipeline-completo) esté desplegado.",

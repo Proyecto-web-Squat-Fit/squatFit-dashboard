@@ -25,7 +25,7 @@ const REQUEST_TIMEOUT = 12000;
  * desplegado en prod. Mientras esté apagado, toda la UI de tareas funciona
  * con datos de ejemplo en memoria (patrón COURSE_CONTENT_API_READY).
  */
-export const LEAD_TASKS_API_READY = false;
+export const LEAD_TASKS_API_READY = true;
 
 export interface LeadTask {
   id: string;
