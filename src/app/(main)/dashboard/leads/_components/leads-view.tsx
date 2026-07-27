@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { LayoutList, KanbanSquare, RefreshCcw, Search, Upload, UserPlus } from "lucide-react";
+import { LayoutList, KanbanSquare, RefreshCcw, Search, Tag, Upload, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandTabs } from "@/components/brand-tabs";
@@ -17,11 +17,14 @@ import {
   LEAD_SOURCES,
   LEAD_SOURCE_LABEL,
   LEAD_STATES,
+  LOST_REASON_TO_OBJECTION,
   type Lead,
+  type LeadLostReason,
   type LeadObjection,
   type LeadSource,
   type LeadState,
 } from "@/lib/services/leads-service";
+import { cn } from "@/lib/utils";
 
 import { CreateLeadDialog } from "./create-lead-dialog";
 import { ImportCsvDialog } from "./import-csv-dialog";
@@ -29,6 +32,8 @@ import { LeadPanel } from "./lead-panel";
 import { LeadsKanban } from "./leads-kanban";
 import { LeadsRepesca } from "./leads-repesca";
 import { LeadsTable } from "./leads-table";
+import { LostReasonDialog } from "./lost-reason-dialog";
+import { MyTasksPanel } from "./my-tasks-panel";
 
 /** Debounce local: evita disparar un GET (limit=200) en cada tecla. */
 function useDebounce<T>(value: T, delay: number): T {
@@ -71,6 +76,10 @@ export function LeadsView() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  // Etiquetas activas del filtro (Bloque 1.4): el lead debe tenerlas TODAS.
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  // Lead pendiente de confirmar su motivo de pérdida (mini-modal, Bloque 1.3).
+  const [lostCandidate, setLostCandidate] = useState<Lead | null>(null);
 
   // UN solo listado: origen y setter/closer son FILTROS, no tableros. La tabla
   // filtra además por estado; en los kanbans el estado lo marcan las columnas
@@ -90,14 +99,24 @@ export function LeadsView() {
     [leads],
   );
 
+  // Etiquetas disponibles para el filtro (todas las que llevan los leads).
+  const allTags = useMemo(() => [...new Set(leads.flatMap((l) => l.tags))].sort((a, b) => a.localeCompare(b, "es")), [leads]);
+
   const visibleLeads = useMemo(() => {
     let out = leads;
     if (assigned !== "all") {
       out = out.filter((l) => l.assigned === assigned || l.setter === assigned || l.closer === assigned);
     }
+    if (activeTags.length > 0) {
+      out = out.filter((l) => activeTags.every((t) => l.tags.includes(t)));
+    }
     // Fecha de ingreso DESC: las nuevas arriba (tabla y tarjetas kanban).
     return [...out].sort((a, b) => new Date(b.intake_date).getTime() - new Date(a.intake_date).getTime());
-  }, [leads, assigned]);
+  }, [leads, assigned, activeTags]);
+
+  const toggleTag = (tag: string) => {
+    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  };
 
   // Mantener sincronizado el lead abierto en el panel con los datos frescos.
   const openLead = selected ? (leads.find((l) => l.id === selected.id) ?? selected) : null;
@@ -108,10 +127,38 @@ export function LeadsView() {
   };
 
   const handleMove = (id: string, newState: LeadState) => {
+    // Al soltar en «Perdido», pedir el motivo ANTES de persistir (Bloque 1.3).
+    if (newState === "Perdido") {
+      const lead = leads.find((l) => l.id === id);
+      if (lead && lead.state !== "Perdido") {
+        setLostCandidate(lead);
+        return;
+      }
+    }
     updateLead.mutate(
       { id, patch: { state: newState } },
       { onError: (e) => toast.error(e instanceof Error ? e.message : "No se pudo mover el lead") },
     );
+  };
+
+  const handleConfirmLost = (reason: LeadLostReason) => {
+    if (!lostCandidate) return;
+    updateLead.mutate(
+      {
+        id: lostCandidate.id,
+        patch: {
+          state: "Perdido",
+          lost_reason: reason,
+          // Sin objeción previa, el motivo también alimenta la Repesca.
+          ...(lostCandidate.objection ? {} : { objection: LOST_REASON_TO_OBJECTION[reason] }),
+        },
+      },
+      {
+        onSuccess: () => toast.success(`${lostCandidate.name} → Perdido`),
+        onError: (e) => toast.error(e instanceof Error ? e.message : "No se pudo mover el lead"),
+      },
+    );
+    setLostCandidate(null);
   };
 
   const handleSetObjection = (id: string, objection: LeadObjection) => {
@@ -210,7 +257,52 @@ export function LeadsView() {
         </Select>
       </div>
 
+      {/* Filtro por etiquetas (Bloque 1.4): chips con toggle */}
+      {allTags.length > 0 && (
+        <div className="-mt-2 flex flex-wrap items-center gap-1.5">
+          <Tag className="text-muted-foreground size-3.5" />
+          {allTags.map((tag) => {
+            const active = activeTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => toggleTag(tag)}
+                className={cn(
+                  "rounded-full border px-2.5 py-0.5 text-xs transition-colors",
+                  active
+                    ? "border-[#363C98] bg-[#EBEAF2] font-medium text-[#363C98] dark:bg-[#363C98]/30 dark:text-[#b9bce8]"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {tag}
+              </button>
+            );
+          })}
+          {activeTags.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTags([])}
+              className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+      )}
+
       <BrandTabs tabs={VIEW_TABS} active={view} onChange={setView} />
+
+      {/* «Mis tareas de hoy» encima del kanban (Bloque 1.2) */}
+      {view === "pipeline" && (
+        <MyTasksPanel
+          demo={demo}
+          onOpenLead={(leadId) => {
+            const lead = leads.find((l) => l.id === leadId);
+            if (lead) handleOpen(lead);
+          }}
+        />
+      )}
 
       {isLoading ? (
         <div className="space-y-2">
@@ -233,6 +325,12 @@ export function LeadsView() {
       <LeadPanel lead={openLead} open={panelOpen} onOpenChange={setPanelOpen} />
       <ImportCsvDialog open={importOpen} onOpenChange={setImportOpen} demo={demo} />
       <CreateLeadDialog open={createOpen} onOpenChange={setCreateOpen} demo={demo} />
+      <LostReasonDialog
+        open={lostCandidate !== null}
+        leadName={lostCandidate?.name}
+        onConfirm={handleConfirmLost}
+        onCancel={() => setLostCandidate(null)}
+      />
     </div>
   );
 }

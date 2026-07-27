@@ -18,7 +18,7 @@ import { BadgeCheck, CalendarDays, Mail, Phone } from "lucide-react";
 import { PIPELINE_STATES, type Lead, type LeadState } from "@/lib/services/leads-service";
 import { cn } from "@/lib/utils";
 
-import { LeadSourceBadge, STATE_STYLES } from "./lead-badges";
+import { formatEuro, LeadSourceBadge, LeadTagChips, LeadValueBadge, STATE_STYLES } from "./lead-badges";
 
 interface LeadsKanbanProps {
   leads: Lead[];
@@ -41,6 +41,13 @@ function LeadCard({ lead, onOpen, dragging }: { lead: Lead; onOpen?: (l: Lead) =
         {lead.is_customer && <BadgeCheck className="size-3.5 shrink-0 text-green-600" aria-label="Ya es cliente" />}
       </p>
       {lead.interest && <p className="text-muted-foreground mt-0.5 truncate text-xs">{lead.interest}</p>}
+      {/* Valor de la oportunidad + etiquetas (Bloque 1 CRM-GHL) */}
+      {(lead.opportunity_value != null || lead.tags.length > 0) && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+          {lead.opportunity_value != null && <LeadValueBadge value={lead.opportunity_value} />}
+          <LeadTagChips tags={lead.tags} max={3} />
+        </div>
+      )}
       <div className="mt-2 flex items-center justify-between gap-2">
         <LeadSourceBadge source={lead.source} />
         <div className="text-muted-foreground flex items-center gap-2">
@@ -72,6 +79,8 @@ function DraggableCard({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void
 
 function Column({ state, leads, onOpen }: { state: LeadState; leads: Lead[]; onOpen: (l: Lead) => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: state });
+  // Suma de valor por columna (Bloque 1.1): «X.XXX € en esta etapa».
+  const valueSum = leads.reduce((acc, l) => acc + (l.opportunity_value ?? 0), 0);
   return (
     <div
       ref={setNodeRef}
@@ -87,6 +96,11 @@ function Column({ state, leads, onOpen }: { state: LeadState; leads: Lead[]; onO
           {leads.length}
         </span>
       </div>
+      {valueSum > 0 && (
+        <p className="text-muted-foreground -mt-1 px-2 pb-1 text-xs tabular-nums">
+          <span className="text-foreground font-semibold">{formatEuro(valueSum)}</span> en esta etapa
+        </p>
+      )}
       <div className="flex min-h-[120px] flex-col gap-2 p-1">
         {leads.map((l) => (
           <DraggableCard key={l.id} lead={l} onOpen={onOpen} />
