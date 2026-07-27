@@ -1,14 +1,25 @@
-import { Instagram, Globe, BadgeCheck } from "lucide-react";
+import { Instagram, Globe, BadgeCheck, Euro, Tag } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
+  LEAD_LOST_REASON_LABEL,
   LEAD_OBJECTION_LABEL,
   LEAD_SOURCE_LABEL,
+  type LeadLostReason,
   type LeadObjection,
   type LeadSource,
   type LeadState,
 } from "@/lib/services/leads-service";
 import { cn } from "@/lib/utils";
+
+/** «1.200 €» — formato es-ES sin decimales (los valores son estimaciones). */
+export function formatEuro(value: number): string {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 /** Colores de estado con la paleta de marca (naranja/índigo/melocotón/lavanda). */
 export const STATE_STYLES: Record<LeadState, { badge: string; dot: string; column: string }> = {
@@ -64,5 +75,53 @@ export function LeadCustomerBadge({ className }: { className?: string }) {
       <BadgeCheck className="size-3.5" />
       Ya es cliente
     </Badge>
+  );
+}
+
+/** Valor de la oportunidad en € (Bloque 1.1) — badge de la tarjeta kanban. */
+export function LeadValueBadge({ value, className }: { value: number; className?: string }) {
+  return (
+    <Badge
+      className={cn(
+        "gap-0.5 bg-[#EBEAF2] font-semibold text-[#363C98] tabular-nums dark:bg-[#363C98]/30 dark:text-[#b9bce8]",
+        className,
+      )}
+    >
+      <Euro className="size-3" />
+      {formatEuro(value).replace("€", "").trim()}
+    </Badge>
+  );
+}
+
+/** Motivo de pérdida (Bloque 1.3). */
+export function LeadLostReasonBadge({ reason, className }: { reason: LeadLostReason; className?: string }) {
+  return (
+    <Badge variant="outline" className={cn("border-rose-200 font-normal text-rose-700 dark:text-rose-400", className)}>
+      {LEAD_LOST_REASON_LABEL[reason]}
+    </Badge>
+  );
+}
+
+/**
+ * Chips de etiquetas (Bloque 1.4). En la tarjeta se muestran hasta `max`
+ * (+n para el resto); en la ficha, todas.
+ */
+export function LeadTagChips({ tags, max, className }: { tags: string[]; max?: number; className?: string }) {
+  if (tags.length === 0) return null;
+  const visible = max ? tags.slice(0, max) : tags;
+  const hidden = tags.length - visible.length;
+  return (
+    <span className={cn("flex flex-wrap items-center gap-1", className)}>
+      {visible.map((tag) => (
+        <span
+          key={tag}
+          className="text-muted-foreground bg-muted inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] leading-none"
+        >
+          <Tag className="size-2.5" />
+          {tag}
+        </span>
+      ))}
+      {hidden > 0 && <span className="text-muted-foreground text-[10px]">+{hidden}</span>}
+    </span>
   );
 }

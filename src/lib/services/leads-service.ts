@@ -58,6 +58,15 @@ export const LEADS_V2_WRITE_READY = true;
  */
 export const LEAD_CONVERT_READY = true;
 
+/**
+ * Pipeline «estilo GHL» (Bloque 1 del plan CRM-GHL): valor de la oportunidad
+ * (`opportunity_value` €), motivo de pérdida (`lost_reason`) y etiquetas
+ * (`tags`). Backend en la rama `feature/crm-pipeline-completo`, aún SIN
+ * mergear/desplegar. Encender al desplegar; mientras tanto la autodetección
+ * (campos presentes en el GET) también lo activa sola.
+ */
+export const LEAD_PIPELINE_V3_READY = false;
+
 /** Columnas del kanban «Pipeline comercial» (en orden). */
 export const PIPELINE_STATES = [
   "Nuevo",
@@ -107,6 +116,33 @@ export const LEAD_OBJECTION_LABEL: Record<LeadObjection, string> = {
   otros: "Otros",
 };
 
+/**
+ * Motivo de pérdida (Bloque 1.3): se pide al arrastrar a «Perdido» y alimenta
+ * la analítica. Distinto de la objeción (que se registra DURANTE la venta).
+ */
+export const LEAD_LOST_REASONS = ["precio", "no_contesta", "timing", "competencia", "otro"] as const;
+export type LeadLostReason = (typeof LEAD_LOST_REASONS)[number];
+
+export const LEAD_LOST_REASON_LABEL: Record<LeadLostReason, string> = {
+  precio: "Precio",
+  no_contesta: "No contesta",
+  timing: "Timing / Pospone",
+  competencia: "Competencia",
+  otro: "Otro",
+};
+
+/**
+ * Motivo de pérdida → objeción de la Repesca: al perder un lead SIN objeción
+ * registrada, se rellena también `objection` para que la Repesca lo agrupe.
+ */
+export const LOST_REASON_TO_OBJECTION: Record<LeadLostReason, LeadObjection> = {
+  precio: "precio",
+  no_contesta: "otros",
+  timing: "timing",
+  competencia: "otros",
+  otro: "otros",
+};
+
 export interface LeadNote {
   id: string;
   body: string;
@@ -150,6 +186,12 @@ export interface Lead {
   setter?: string;
   /** Closer asignado — solo datos de ejemplo (backend colapsa en `assigned`). */
   closer?: string;
+  /** Valor estimado de la oportunidad en € (Bloque 1.1; suma por columna). */
+  opportunity_value?: number;
+  /** Motivo de pérdida (Bloque 1.3; se pide al mover a «Perdido»). */
+  lost_reason?: LeadLostReason;
+  /** Etiquetas libres (Bloque 1.4; caliente, VIP…). Siempre array. */
+  tags: string[];
   notes: LeadNote[];
   history: LeadHistoryEntry[];
   created_at: string;
@@ -180,6 +222,12 @@ export interface UpdateLeadInput {
   state?: LeadState;
   /** `null` limpia la objeción. */
   objection?: LeadObjection | null;
+  /** Valor de la oportunidad en €; `null` lo limpia (Bloque 1.1). */
+  opportunity_value?: number | null;
+  /** Motivo de pérdida; `null` lo limpia (Bloque 1.3). */
+  lost_reason?: LeadLostReason | null;
+  /** Etiquetas: sustituyen a las existentes (Bloque 1.4). */
+  tags?: string[];
 }
 
 /**
@@ -243,6 +291,13 @@ export function normalizeLeadObjection(value: unknown): LeadObjection | undefine
   return OBJECTION_ALIASES[value.trim().toLowerCase()];
 }
 
+/** Motivo de pérdida desde la API (enum backend, tolerante a variantes). */
+function normalizeLostReason(value: unknown): LeadLostReason | undefined {
+  if (typeof value !== "string") return undefined;
+  const v = value.trim().toLowerCase().replace(/\s+/g, "_");
+  return (LEAD_LOST_REASONS as readonly string[]).includes(v) ? (v as LeadLostReason) : undefined;
+}
+
 const SOURCE_ALIASES: Record<string, LeadSource> = {
   web: "web",
   website: "web",
@@ -280,7 +335,19 @@ function detectV2Fields(raw: unknown): void {
     if ("objection" in o || "intake_date" in o || "is_customer" in o || "converted_user_id" in o) {
       leadsV2Detected = true;
     }
+    // Pipeline v3 (Bloque 1 CRM-GHL): si el backend ya devuelve los campos
+    // nuevos, se puede escribirlos aunque el flag manual siga apagado.
+    if ("opportunity_value" in o || "lost_reason" in o || "tags" in o) {
+      leadsV3Detected = true;
+    }
   }
+}
+
+let leadsV3Detected = false;
+
+/** ¿Podemos leer/escribir valor, motivo de pérdida y etiquetas (Bloque 1)? */
+export function leadsPipelineV3Enabled(): boolean {
+  return LEAD_PIPELINE_V3_READY || leadsV3Detected;
 }
 
 /**
@@ -326,6 +393,13 @@ function normalizeLead(raw: any): Lead {
     assigned: assigned || undefined,
     setter: raw.setter ?? raw.setter_name ?? undefined,
     closer: raw.closer ?? raw.closer_name ?? undefined,
+    // Pipeline v3 (Bloque 1): tolerante a backends que aún no los devuelven.
+    opportunity_value:
+      raw?.opportunity_value != null && !Number.isNaN(Number(raw.opportunity_value))
+        ? Number(raw.opportunity_value)
+        : undefined,
+    lost_reason: normalizeLostReason(raw?.lost_reason),
+    tags: Array.isArray(raw?.tags) ? raw.tags.filter((t: unknown): t is string => typeof t === "string") : [],
     notes: parseNotes(raw.notes, raw.updated_at ?? raw.updatedAt ?? created),
     history: Array.isArray(raw.history) ? raw.history : [],
     created_at: created,
@@ -384,6 +458,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Programa Transfórmate",
     intake_date: "2026-07-19T10:30:00Z",
     is_customer: false,
+    opportunity_value: 1200, tags: ["caliente"],
     setter: "María",
     notes: [],
     history: [{ id: "h1", event: "Lead creado desde Instagram (DM)", created_at: "2026-07-19T10:30:00Z" }],
@@ -399,6 +474,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Curso La Mujer",
     intake_date: "2026-07-17T08:05:00Z",
     is_customer: false,
+    opportunity_value: 300, tags: [],
     setter: "Laura",
     notes: [],
     history: [{ id: "h2", event: "Lead creado desde formulario web", created_at: "2026-07-17T08:05:00Z" }],
@@ -415,6 +491,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Asesoría 1:1",
     intake_date: "2026-07-16T11:00:00Z",
     is_customer: false,
+    opportunity_value: 600, tags: ["VIP"],
     setter: "María",
     notes: [
       { id: "n1", body: "Le envié el enlace de la llamada.", author: "Staff", created_at: "2026-07-17T16:40:00Z" },
@@ -441,6 +518,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Curso La Mujer",
     intake_date: "2026-07-15T08:00:00Z",
     is_customer: false,
+    opportunity_value: 300, tags: ["caliente"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [],
@@ -457,6 +535,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Programa Transfórmate",
     intake_date: "2026-07-10T10:00:00Z",
     is_customer: false,
+    opportunity_value: 1900, tags: [],
     setter: "María",
     closer: "Hamlet",
     notes: [],
@@ -474,6 +553,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Programa Transfórmate",
     intake_date: "2026-07-08T09:30:00Z",
     is_customer: false,
+    opportunity_value: 2400, tags: ["caliente", "VIP"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [
@@ -497,6 +577,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Asesoría 1:1",
     intake_date: "2026-07-05T09:00:00Z",
     is_customer: true,
+    opportunity_value: 900, tags: [],
     converted_user_id: "sample-user-paula",
     setter: "María",
     closer: "Hamlet",
@@ -515,6 +596,7 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "precio",
     intake_date: "2026-07-02T13:00:00Z",
     is_customer: false,
+    opportunity_value: 300, lost_reason: "precio", tags: ["objecion-precio"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [
@@ -535,6 +617,7 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "timing",
     intake_date: "2026-06-05T10:00:00Z",
     is_customer: false,
+    opportunity_value: 1200, lost_reason: "timing", tags: [],
     setter: "María",
     notes: [
       { id: "n5", body: "Quiere empezar después del verano.", author: "Staff", created_at: "2026-06-12T09:00:00Z" },
@@ -553,6 +636,7 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "confianza",
     intake_date: "2026-05-20T17:00:00Z",
     is_customer: false,
+    opportunity_value: 600, lost_reason: "otro", tags: [],
     setter: "Laura",
     closer: "Hamlet",
     notes: [],
@@ -569,6 +653,7 @@ const SAMPLE_LEADS: Lead[] = [
     interest: "Curso La Mujer",
     intake_date: "2026-06-28T12:00:00Z",
     is_customer: false,
+    lost_reason: "no_contesta", tags: [],
     setter: "María",
     notes: [],
     history: [{ id: "h12", event: "No respondió tras dos intentos", created_at: "2026-07-06T10:00:00Z" }],
@@ -586,6 +671,7 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "precio",
     intake_date: "2026-06-10T09:00:00Z",
     is_customer: false,
+    opportunity_value: 1900, tags: ["caliente"],
     setter: "Laura",
     closer: "Hamlet",
     notes: [
@@ -610,6 +696,7 @@ const SAMPLE_LEADS: Lead[] = [
     objection: "otros",
     intake_date: "2026-07-01T15:00:00Z",
     is_customer: false,
+    opportunity_value: 600, tags: [],
     setter: "María",
     notes: [],
     history: [{ id: "h14", event: "Pendiente de decidir con su pareja", created_at: "2026-07-09T18:00:00Z" }],
@@ -621,7 +708,7 @@ const SAMPLE_LEADS: Lead[] = [
 // Copia mutable en memoria para que mover tarjetas / editar funcione en demo.
 let sampleStore: Lead[] | null = null;
 function getSampleStore(): Lead[] {
-  sampleStore ??= SAMPLE_LEADS.map((l) => ({ ...l, notes: [...l.notes], history: [...l.history] }));
+  sampleStore ??= SAMPLE_LEADS.map((l) => ({ ...l, notes: [...l.notes], history: [...l.history], tags: [...l.tags] }));
   return sampleStore;
 }
 
@@ -678,7 +765,7 @@ export class LeadsService {
     if (!LEADS_API_READY || query?.demo) {
       // Copias frescas: el store es mutable y, si devolviéramos las mismas
       // referencias, react-query/useMemo no verían los cambios tras mutar.
-      return applyFilters(getSampleStore(), query).map((l) => ({ ...l, notes: [...l.notes], history: [...l.history] }));
+      return applyFilters(getSampleStore(), query).map((l) => ({ ...l, notes: [...l.notes], history: [...l.history], tags: [...l.tags] }));
     }
     // El backend valida con forbidNonWhitelisted: SOLO acepta los params del
     // QueryLeadsDTO (status, origin, assigned_to, objection, intake_from/to,
@@ -729,6 +816,7 @@ export class LeadsService {
         is_customer: false,
         setter: input.setter,
         closer: input.closer,
+        tags: [],
         notes: [],
         history: [{ id: `h-${Date.now()}`, event: "Lead creado", created_at: now }],
         created_at: now,
@@ -785,17 +873,48 @@ export class LeadsService {
           lead.objection = next;
         }
       }
+      if (patch.opportunity_value !== undefined) {
+        lead.opportunity_value = patch.opportunity_value ?? undefined;
+      }
+      if (patch.tags !== undefined) {
+        lead.tags = [...patch.tags];
+      }
+      if (patch.lost_reason !== undefined) {
+        const next = patch.lost_reason ?? undefined;
+        if (next !== lead.lost_reason) {
+          lead.history.push({
+            id: `h-${Date.now()}-lr`,
+            event: next ? `Motivo de pérdida: ${LEAD_LOST_REASON_LABEL[next]}` : "Motivo de pérdida retirado",
+            created_at: nowIso(),
+          });
+          lead.lost_reason = next;
+        }
+      }
       lead.updated_at = nowIso();
-      return { ...lead };
+      return { ...lead, tags: [...lead.tags] };
     }
 
     if (patch.objection !== undefined && !leadsV2WritesEnabled()) {
       throw new Error("La objeción se guardará cuando el backend (Fase 9) publique el nuevo contrato de leads.");
     }
+    // Campos del pipeline v3 (valor €, motivo de pérdida, etiquetas): el
+    // backend actual valida con forbidNonWhitelisted, así que solo se envían
+    // cuando el contrato nuevo está activo (flag o autodetección). Si SOLO se
+    // pedían campos v3, avisar en vez de fingir que se guardó.
+    const v3 = leadsPipelineV3Enabled();
+    const wantsV3 = patch.opportunity_value !== undefined || patch.lost_reason !== undefined || patch.tags !== undefined;
+    if (wantsV3 && !v3 && patch.state === undefined && patch.objection === undefined) {
+      throw new Error(
+        "El valor, las etiquetas y el motivo de pérdida se guardarán cuando el backend (rama feature/crm-pipeline-completo) esté desplegado.",
+      );
+    }
     // Backend: `status` (no `state`); `objection: null` limpia la objeción.
     const body: Record<string, unknown> = {
       ...(patch.state ? { status: stateToApi(patch.state) } : {}),
       ...(patch.objection !== undefined ? { objection: patch.objection } : {}),
+      ...(v3 && patch.opportunity_value !== undefined ? { opportunity_value: patch.opportunity_value } : {}),
+      ...(v3 && patch.lost_reason !== undefined ? { lost_reason: patch.lost_reason } : {}),
+      ...(v3 && patch.tags !== undefined ? { tags: patch.tags } : {}),
     };
     const raw = await this.request<any>(`/api/v1/admin-panel/leads/${id}`, {
       method: "PUT",

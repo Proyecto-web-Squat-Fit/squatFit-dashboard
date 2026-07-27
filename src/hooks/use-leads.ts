@@ -46,6 +46,11 @@ export function useUpdateLead() {
                   ...l,
                   ...(patch.state ? { state: patch.state } : {}),
                   ...(patch.objection !== undefined ? { objection: patch.objection ?? undefined } : {}),
+                  ...(patch.opportunity_value !== undefined
+                    ? { opportunity_value: patch.opportunity_value ?? undefined }
+                    : {}),
+                  ...(patch.lost_reason !== undefined ? { lost_reason: patch.lost_reason ?? undefined } : {}),
+                  ...(patch.tags !== undefined ? { tags: patch.tags } : {}),
                 }
               : l,
           ),
