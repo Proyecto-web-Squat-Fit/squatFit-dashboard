@@ -21,6 +21,7 @@ import {
   Plug,
   Settings,
   CookingPot,
+  Link2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -196,6 +197,15 @@ export const sidebarItems: NavGroup[] = [
         url: "/dashboard/integraciones",
         icon: Plug,
         roles: ADMIN_SOPORTE,
+        isNew: true,
+      },
+      {
+        title: "Redirecciones",
+        url: "/dashboard/redirects",
+        icon: Link2,
+        // Permiso `redirects` clonado en la migración a los mismos roles que
+        // ya tenían `users` en `put` (histórico: solo admin en este back office).
+        roles: ADMIN,
         isNew: true,
       },
       {
