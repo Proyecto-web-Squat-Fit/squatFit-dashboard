@@ -32,12 +32,23 @@ interface FormState {
 
 const EMPTY_FORM: FormState = { slug: "", target_url: "", active: true };
 
-/** «/unete/» → «unete» (mismo criterio que normalizeSlug del backend, para no sorprender al guardar). */
-function previewSlug(value: string): string {
+/**
+ * Genera un slug válido para URL a partir de lo que escriba el admin:
+ * sin acentos/diacríticos, en minúsculas, espacios y símbolos → guion,
+ * sin barras ni guiones sobrantes en los extremos. El backend no valida
+ * esto (DTO sin regex de slug), así que la barrera útil está aquí: sin
+ * esto, un admin podría guardar «año nuevo!» y el enlace corto quedaría
+ * roto (espacios/símbolos no son válidos en una ruta).
+ */
+function slugify(value: string): string {
   return value
-    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // quita los diacriticos (a con acento -> a, n con tilde -> n, etc.)
     .toLowerCase()
-    .replace(/^\/+|\/+$/g, "");
+    .trim()
+    .replace(/^\/+|\/+$/g, "") // barras en los extremos, igual que antes
+    .replace(/[^a-z0-9]+/g, "-") // cualquier tramo no alfanumérico → un solo guion
+    .replace(/^-+|-+$/g, ""); // sin guion sobrante al principio/final
 }
 
 export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFormDialogProps) {
@@ -58,7 +69,7 @@ export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFor
   }, [open, redirect]);
 
   const handleSubmit = async () => {
-    const slug = previewSlug(form.slug);
+    const slug = slugify(form.slug);
     const target = form.target_url.trim();
     if (!slug) {
       setError("El slug es obligatorio.");
@@ -106,11 +117,15 @@ export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFor
               placeholder="unete"
               value={form.slug}
               onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+              // Al salir del campo se normaliza a un slug válido (sin acentos/espacios/
+              // símbolos) para que lo que se ve ya sea lo que se va a guardar, y el
+              // admin pueda seguir editándolo si quiere ajustarlo a mano.
+              onBlur={() => setForm((f) => ({ ...f, slug: slugify(f.slug) }))}
               disabled={isPending}
             />
             {form.slug.trim() && (
               <p className="text-muted-foreground text-xs">
-                /r/{previewSlug(form.slug) || <span className="italic">slug</span>}
+                /r/{slugify(form.slug) || <span className="italic">slug</span>}
               </p>
             )}
           </div>
@@ -130,7 +145,7 @@ export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFor
             <div className="flex flex-col gap-0.5">
               <Label htmlFor="active">Activo</Label>
               <p className="text-muted-foreground text-xs">
-                Si se desactiva, <code>/r/{previewSlug(form.slug) || "…"}</code> deja de redirigir (404).
+                Si se desactiva, <code>/r/{slugify(form.slug) || "…"}</code> deja de redirigir (404).
               </p>
             </div>
             <Switch

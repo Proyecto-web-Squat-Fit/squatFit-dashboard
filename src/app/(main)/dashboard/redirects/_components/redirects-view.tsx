@@ -114,6 +114,17 @@ export function RedirectsView() {
   const total = query.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // Si la página en la que estamos deja de existir (p. ej. se borra la única
+  // fila de la última página), recorta `page` a la última página válida en
+  // cuanto la lista responde. Sin esto la tabla queda en un callejón sin
+  // salida: página vacía, sin filtro puesto, y sin botón de paginación para
+  // volver atrás (los controles se ocultan con `totalPages > 1`).
+  useEffect(() => {
+    if (query.data && page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [query.data, page, totalPages]);
+
   const openCreate = () => {
     setEditingRedirect(null);
     setDialogOpen(true);
@@ -198,9 +209,18 @@ export function RedirectsView() {
             {rows !== null && rows.length === 0 && !query.isError && (
               <TableRow>
                 <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
-                  {debouncedSearch || activeFilter !== "todos"
-                    ? "No hay redirecciones que coincidan con el filtro."
-                    : "No hay redirecciones todavía. Crea la primera con «Nueva redirección»."}
+                  {(() => {
+                    // El mensaje se decide por `total` (lo que hay bajo el filtro
+                    // actual en TODAS las páginas), no por `rows.length` de esta
+                    // página: si `total > 0` no es que no haya ninguna, es que
+                    // esta página se quedó sin filas (se está recortando `page`
+                    // arriba) y decir "no hay ninguna" o "no coincide con el
+                    // filtro" sería engañoso en los dos casos.
+                    if (total > 0) return "Esta página ya no tiene redirecciones, volviendo a la anterior…";
+                    if (debouncedSearch || activeFilter !== "todos")
+                      return "No hay redirecciones que coincidan con el filtro.";
+                    return "No hay redirecciones todavía. Crea la primera con «Nueva redirección».";
+                  })()}
                 </TableCell>
               </TableRow>
             )}
