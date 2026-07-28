@@ -6,12 +6,12 @@ import Link from "next/link";
 
 import { Apple, ArrowLeftRight, ArrowRight, ChefHat, Clock, Flame, Search } from "lucide-react";
 
-import { alimentosData } from "@/app/(main)/dashboard/dieta/_components/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlimentosAdminService, type AdminFood } from "@/lib/services/alimentos-admin-service";
 import { RecetasAdminService, type AdminRecipe } from "@/lib/services/recetas-admin-service";
 
 /**
@@ -58,7 +58,9 @@ function fechaCorta(iso: string) {
 export function NutriLanding() {
   const [recipes, setRecipes] = useState<AdminRecipe[] | null>(null);
   const [recipesError, setRecipesError] = useState(false);
+  const [totalAlimentos, setTotalAlimentos] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [alimentosResultados, setAlimentosResultados] = useState<AdminFood[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +74,13 @@ export function NutriLanding() {
           setRecipes([]);
         }
       });
+    AlimentosAdminService.getFoods({ limit: 1 })
+      .then((r) => {
+        if (!cancelled) setTotalAlimentos(r.total);
+      })
+      .catch(() => {
+        if (!cancelled) setTotalAlimentos(null);
+      });
     return () => {
       cancelled = true;
     };
@@ -83,20 +92,43 @@ export function NutriLanding() {
     [recipes],
   );
 
-  // Buscador barato: filtra en memoria sobre recetas ya cargadas + alimentos.
-  const q = search.trim().toLowerCase();
+  // Buscador rápido: recetas ya cargadas en memoria + alimentos vía API (33.647, no cabe en memoria).
+  const q = search.trim();
+  useEffect(() => {
+    if (!q) {
+      setAlimentosResultados([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      AlimentosAdminService.getFoods({ search: q, limit: 5 })
+        .then((r) => {
+          if (!cancelled) setAlimentosResultados(r.data);
+        })
+        .catch(() => {
+          if (!cancelled) setAlimentosResultados([]);
+        });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [q]);
+
   const resultados = useMemo(() => {
     if (!q) return null;
+    const qLower = q.toLowerCase();
     const recetas = (recipes ?? [])
-      .filter((r) => r.name.toLowerCase().includes(q))
+      .filter((r) => r.name.toLowerCase().includes(qLower))
       .slice(0, 5)
       .map((r) => ({ tipo: "Receta", nombre: r.name, href: "/dashboard/recetas" }));
-    const alimentos = alimentosData
-      .filter((a) => a.nombre.toLowerCase().includes(q))
-      .slice(0, 5)
-      .map((a) => ({ tipo: "Alimento", nombre: a.nombre, href: "/dashboard/nutri/alimentos" }));
+    const alimentos = alimentosResultados.map((a) => ({
+      tipo: "Alimento",
+      nombre: a.nombre,
+      href: "/dashboard/nutri/alimentos",
+    }));
     return [...recetas, ...alimentos];
-  }, [q, recipes]);
+  }, [q, recipes, alimentosResultados]);
 
   return (
     <div className="@container/main flex flex-col gap-4 md:gap-6">
@@ -150,7 +182,8 @@ export function NutriLanding() {
             </CardHeader>
             <CardContent className="mt-auto flex items-center justify-between">
               <p className="text-muted-foreground text-sm">
-                {s.id === "alimentos" && `${alimentosData.length} alimentos`}
+                {s.id === "alimentos" &&
+                  (totalAlimentos === null ? "Cargando…" : `${totalAlimentos.toLocaleString("es-ES")} alimentos`)}
                 {s.id === "recetas" &&
                   (recipes === null ? "Cargando…" : recipesError ? "—" : `${recipes.length} recetas`)}
                 {s.id === "sustituciones" && "Equivalencias por categoría"}
