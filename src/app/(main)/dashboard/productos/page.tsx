@@ -6,7 +6,7 @@ import { ProductosView } from "./_components/productos-view";
 
 export const metadata: Metadata = {
   title: "Productos | Squad Fit",
-  description: "Catálogo de productos, concesiones y packs",
+  description: "Catálogo de productos, concesiones, packs y planes de asesoría",
 };
 
 export default function ProductosPage() {
