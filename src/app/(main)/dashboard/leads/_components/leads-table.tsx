@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { BadgeCheck, Mail, Phone } from "lucide-react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -37,9 +39,22 @@ export function LeadsTable({ leads, onOpen }: LeadsTableProps) {
               <TableCell className="font-medium">
                 <span className="flex items-center gap-1.5">
                   {lead.name}
-                  {lead.is_customer && (
-                    <BadgeCheck className="size-4 shrink-0 text-green-600" aria-label="Ya es cliente" />
-                  )}
+                  {lead.is_customer &&
+                    (lead.converted_user_id ? (
+                      // Auditoría julio, "ficha del cliente accesible desde más
+                      // sitios": antes solo se llegaba a la ficha abriendo el
+                      // panel lateral del lead. stopPropagation porque la fila
+                      // entera también abre ese panel al hacer click.
+                      <Link
+                        href={`/dashboard/alumnos/${lead.converted_user_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        title="Ver ficha del cliente"
+                      >
+                        <BadgeCheck className="size-4 shrink-0 text-green-600 hover:text-green-700" />
+                      </Link>
+                    ) : (
+                      <BadgeCheck className="size-4 shrink-0 text-green-600" aria-label="Ya es cliente" />
+                    ))}
                 </span>
               </TableCell>
               <TableCell>
