@@ -132,9 +132,10 @@ export const sidebarItems: NavGroup[] = [
     items: [
       {
         title: "CRM",
-        url: "/dashboard/leads",
+        url: "/dashboard/crm",
         icon: Megaphone,
         roles: ADMIN_SOPORTE,
+        landing: true,
         subItems: [
           { title: "Leads", url: "/dashboard/leads", icon: Contact },
           { title: "Downsell", url: "/dashboard/downsell", icon: BadgePercent },
