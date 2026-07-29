@@ -26,7 +26,7 @@ const REQUEST_TIMEOUT = 12000;
 // ============================================================================
 
 /** Estados del pedido (contrato ADMIN_STATUSES del backend). */
-export const ORDER_STATUSES = ["completed", "processing", "pending", "refunded", "cancelled"] as const;
+export const ORDER_STATUSES = ["completed", "shipped", "processing", "pending", "refunded", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 interface StatusMeta {
@@ -39,6 +39,7 @@ interface StatusMeta {
 
 export const ORDER_STATUS_META: Record<OrderStatus, StatusMeta> = {
   completed: { label: "Completado", badge: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200" },
+  shipped: { label: "Enviado", badge: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" },
   processing: { label: "Procesando", badge: "bg-[#EBEAF2] text-[#363C98] dark:bg-[#363C98]/30 dark:text-[#b9bce8]" },
   pending: { label: "Pendiente", badge: "bg-[#FFEDE0] text-[#FF690B] dark:bg-[#FF690B]/15 dark:text-[#FFB07A]" },
   refunded: {
@@ -137,6 +138,101 @@ export interface RefundOrderPayload {
   reason: RefundReason;
   note?: string;
   amountCents?: number;
+}
+
+// ─── Envío del pedido ────────────────────────────────────────────────────────
+// Correos tiene la API bloqueada (su OAuth sigue rechazando nuestras
+// credenciales), así que el equipo envía los libros por su cuenta y anota aquí
+// transportista + nº de seguimiento. El backend deja el pedido en «Enviado» y
+// avisa al cliente por email con el enlace de seguimiento.
+
+export const SHIPMENT_CARRIERS = ["correos_express", "correos", "otro"] as const;
+export type ShipmentCarrier = (typeof SHIPMENT_CARRIERS)[number];
+
+export const CARRIER_LABEL: Record<ShipmentCarrier, string> = {
+  correos_express: "Correos Express",
+  correos: "Correos",
+  otro: "Otro transportista",
+};
+
+export interface ShipmentEvent {
+  id: string;
+  event: string;
+  detail: Record<string, unknown> | null;
+  actorName: string | null;
+  createdAt: string;
+}
+
+export interface Shipment {
+  shipmentId: string;
+  orderId: string;
+  /** 'manual' = anotado por el equipo; 'api' = alta en el WS de Correos. */
+  source: "manual" | "api";
+  carrier: ShipmentCarrier;
+  carrierLabel: string;
+  carrierName: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  status: string;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  notifiedAt: string | null;
+  createdByName: string | null;
+  createdAt: string;
+  events: ShipmentEvent[];
+}
+
+export interface RegisterShipmentPayload {
+  orderId: string;
+  carrier: ShipmentCarrier;
+  carrierName?: string;
+  trackingNumber: string;
+  shippedAt?: string;
+  trackingUrl?: string;
+  notify?: boolean;
+  note?: string;
+}
+
+export interface UpdateShipmentPayload {
+  orderId: string;
+  carrier?: ShipmentCarrier;
+  carrierName?: string;
+  trackingNumber?: string;
+  shippedAt?: string;
+  trackingUrl?: string;
+  notify?: boolean;
+  reason?: string;
+}
+
+function normalizeShipment(raw: any): Shipment {
+  const carrier = (SHIPMENT_CARRIERS as readonly string[]).includes(raw?.carrier)
+    ? (raw.carrier as ShipmentCarrier)
+    : "correos_express";
+  return {
+    shipmentId: String(raw?.shipment_id ?? ""),
+    orderId: String(raw?.order_id ?? ""),
+    source: raw?.source === "manual" ? "manual" : "api",
+    carrier,
+    carrierLabel: raw?.carrier_label ?? CARRIER_LABEL[carrier],
+    carrierName: raw?.carrier_name ?? null,
+    trackingNumber: raw?.shipping_number ?? null,
+    trackingUrl: raw?.tracking_url ?? null,
+    status: raw?.status ?? "shipped",
+    shippedAt: raw?.shipped_at ?? null,
+    deliveredAt: raw?.delivered_at ?? null,
+    notifiedAt: raw?.notified_at ?? null,
+    createdByName: raw?.created_by_name ?? null,
+    createdAt: raw?.created_at ?? new Date().toISOString(),
+    events: Array.isArray(raw?.events)
+      ? raw.events.map((e: any) => ({
+          id: String(e.id),
+          event: String(e.event),
+          detail: e.detail ?? null,
+          actorName: e.actor_name ?? null,
+          createdAt: e.created_at,
+        }))
+      : [],
+  };
 }
 
 function toNumber(v: unknown): number {
@@ -283,6 +379,128 @@ export class OrdersService {
       throw new Error(payload.message ?? payload.error ?? `Error ${res.status} al procesar el reembolso`);
     }
     return res.json().catch(() => ({ message: "Reembolso procesado" }));
+  }
+
+  // ─── Envío ────────────────────────────────────────────────────────────────
+
+  /** Envío del pedido con su historial; `null` si aún no tiene ninguno. */
+  static async getShipment(orderId: string): Promise<Shipment | null> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/admin-panel/orders/${orderId}/shipment/detail`, {
+      headers: this.authHeaders(),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+    });
+    if (res.status === 401) {
+      handleUnauthorized();
+      throw new Error("Sesión caducada");
+    }
+    // 404 = el pedido todavía no tiene envío: no es un error de la vista.
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message ?? `Error ${res.status}`);
+    }
+    return normalizeShipment(await res.json());
+  }
+
+  /** Anota un envío hecho a mano y (salvo que se desactive) avisa al cliente. */
+  static async registerShipment({
+    orderId,
+    carrier,
+    carrierName,
+    trackingNumber,
+    shippedAt,
+    trackingUrl,
+    notify,
+    note,
+  }: RegisterShipmentPayload): Promise<Shipment> {
+    const body: Record<string, unknown> = {
+      carrier,
+      tracking_number: trackingNumber.trim(),
+      notify: notify !== false,
+    };
+    if (carrierName?.trim()) body.carrier_name = carrierName.trim();
+    if (shippedAt) body.shipped_at = shippedAt;
+    if (trackingUrl?.trim()) body.tracking_url = trackingUrl.trim();
+    if (note?.trim()) body.note = note.trim();
+
+    const data = await this.request<any>(`/api/v1/admin-panel/orders/${orderId}/shipment/manual`, {
+      method: "POST",
+      headers: this.authHeaders(),
+      body: JSON.stringify(body),
+    });
+    return normalizeShipment(data);
+  }
+
+  /** Corrige el envío (nº de seguimiento, transportista o fecha); deja rastro. */
+  static async updateShipment({
+    orderId,
+    carrier,
+    carrierName,
+    trackingNumber,
+    shippedAt,
+    trackingUrl,
+    notify,
+    reason,
+  }: UpdateShipmentPayload): Promise<Shipment> {
+    const body: Record<string, unknown> = {};
+    if (carrier) body.carrier = carrier;
+    if (carrierName !== undefined) body.carrier_name = carrierName.trim();
+    if (trackingNumber?.trim()) body.tracking_number = trackingNumber.trim();
+    if (shippedAt) body.shipped_at = shippedAt;
+    if (trackingUrl !== undefined) body.tracking_url = trackingUrl.trim();
+    if (notify) body.notify = true;
+    if (reason?.trim()) body.reason = reason.trim();
+
+    const data = await this.request<any>(`/api/v1/admin-panel/orders/${orderId}/shipment/manual`, {
+      method: "PUT",
+      headers: this.authHeaders(),
+      body: JSON.stringify(body),
+    });
+    return normalizeShipment(data);
+  }
+
+  /** Marca el envío como entregado y cierra el pedido. */
+  static async markShipmentDelivered(orderId: string, deliveredAt?: string): Promise<Shipment> {
+    const data = await this.request<any>(`/api/v1/admin-panel/orders/${orderId}/shipment/delivered`, {
+      method: "POST",
+      headers: this.authHeaders(),
+      body: JSON.stringify(deliveredAt ? { delivered_at: deliveredAt } : {}),
+    });
+    return normalizeShipment(data);
+  }
+
+  /** Reenvía al cliente el email con el nº de seguimiento. */
+  static async resendShipmentNotice(orderId: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/v1/admin-panel/orders/${orderId}/shipment/notify`, {
+      method: "POST",
+      headers: this.authHeaders(),
+      body: "{}",
+    });
+  }
+}
+
+/** Texto legible de cada evento del historial de envío. */
+export function shipmentEventLabel(event: ShipmentEvent): string {
+  const detail = (event.detail ?? {}) as Record<string, any>;
+  switch (event.event) {
+    case "created":
+      return `Envío registrado (${detail.tracking_number ?? "sin número"})`;
+    case "corrected": {
+      const changed = detail.changed ?? {};
+      const parts = Object.entries(changed).map(([field, v]: [string, any]) => {
+        const label = field === "tracking_number" ? "nº de seguimiento" : field.replace(/_/g, " ");
+        return `${label}: ${v?.from ?? "—"} → ${v?.to ?? "—"}`;
+      });
+      return `Corregido · ${parts.join("; ") || "sin cambios"}${detail.reason ? ` (${detail.reason})` : ""}`;
+    }
+    case "notified":
+      return `Aviso enviado a ${detail.to ?? "el cliente"}`;
+    case "delivered":
+      return "Marcado como entregado";
+    case "api_override":
+      return "Alta en Correos forzada sobre este envío manual";
+    default:
+      return event.event;
   }
 }
 

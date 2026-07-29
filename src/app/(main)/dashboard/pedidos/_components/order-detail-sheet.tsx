@@ -21,7 +21,11 @@ import {
   type PaymentMethod,
 } from "@/lib/services/orders-service";
 
+import { OrderShipmentPanel } from "./order-shipment-panel";
 import { OrderStatusBadge, PaymentBadge } from "./order-status-badge";
+
+/** Tipos de línea que se mandan en un paquete (el resto es acceso digital). */
+const PHYSICAL_PRODUCT_TYPES = ["book", "version", "pack", "product"];
 
 interface OrderDetailSheetProps {
   order: Order | null;
@@ -53,8 +57,14 @@ export function OrderDetailSheet({ order, open, onOpenChange, onRefund }: OrderD
   if (!order) return null;
 
   const canComplete = order.status === "pending" || order.status === "processing";
-  const canRefund = order.status === "completed" || order.status === "processing";
+  const canRefund = order.status === "completed" || order.status === "processing" || order.status === "shipped";
   const address = addressLines(order.shippingAddress);
+  // El bloque de envío solo tiene sentido en pedidos que viajan en un paquete:
+  // hay dirección postal, alguna línea física, o ya se anotó un envío.
+  const isPhysical =
+    address.length > 0 ||
+    order.status === "shipped" ||
+    order.items.some((i) => PHYSICAL_PRODUCT_TYPES.includes(String(i.product_type ?? "").toLowerCase()));
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -110,13 +120,13 @@ export function OrderDetailSheet({ order, open, onOpenChange, onRefund }: OrderD
             </div>
           </div>
 
-          {/* Envío */}
+          {/* Dirección de envío */}
           {address.length > 0 && (
             <>
               <Separator />
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <MapPin className="size-4" /> Envío
+                  <MapPin className="size-4" /> Dirección de envío
                 </div>
                 {address.map((line, i) => (
                   <p key={i} className="text-muted-foreground text-sm">
@@ -124,6 +134,14 @@ export function OrderDetailSheet({ order, open, onOpenChange, onRefund }: OrderD
                   </p>
                 ))}
               </div>
+            </>
+          )}
+
+          {/* Registro del envío (transportista + nº de seguimiento + aviso) */}
+          {isPhysical && (
+            <>
+              <Separator />
+              <OrderShipmentPanel order={order} />
             </>
           )}
 

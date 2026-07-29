@@ -6,9 +6,12 @@ import {
   type OrdersQuery,
   type OrderStatus,
   type PaymentMethod,
+  type RegisterShipmentPayload,
+  type UpdateShipmentPayload,
 } from "@/lib/services/orders-service";
 
 const ORDERS_KEY = ["orders"] as const;
+const SHIPMENT_KEY = ["order-shipment"] as const;
 
 export function useOrders(query?: OrdersQuery) {
   return useQuery({
@@ -38,6 +41,57 @@ export function useSendOrderEmail() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status?: OrderStatus }) => OrdersService.sendEmail(id, status),
   });
+}
+
+// ─── Envío del pedido (registro manual mientras Correos no activa la API) ────
+
+export function useOrderShipment(orderId: string | null | undefined) {
+  return useQuery({
+    queryKey: [...SHIPMENT_KEY, orderId],
+    queryFn: () => OrdersService.getShipment(orderId!),
+    enabled: Boolean(orderId),
+    staleTime: 15_000,
+  });
+}
+
+/** Invalida a la vez el envío del pedido y la lista (el estado cambia). */
+function useShipmentMutation<TArgs>(fn: (args: TArgs) => Promise<unknown>, orderIdOf: (args: TArgs) => string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: (_data, args) => {
+      queryClient.invalidateQueries({ queryKey: [...SHIPMENT_KEY, orderIdOf(args)] });
+      queryClient.invalidateQueries({ queryKey: ORDERS_KEY });
+    },
+  });
+}
+
+export function useRegisterShipment() {
+  return useShipmentMutation(
+    (payload: RegisterShipmentPayload) => OrdersService.registerShipment(payload),
+    (p) => p.orderId,
+  );
+}
+
+export function useUpdateShipment() {
+  return useShipmentMutation(
+    (payload: UpdateShipmentPayload) => OrdersService.updateShipment(payload),
+    (p) => p.orderId,
+  );
+}
+
+export function useMarkShipmentDelivered() {
+  return useShipmentMutation(
+    ({ orderId }: { orderId: string }) => OrdersService.markShipmentDelivered(orderId),
+    (p) => p.orderId,
+  );
+}
+
+export function useResendShipmentNotice() {
+  return useShipmentMutation(
+    ({ orderId }: { orderId: string }) => OrdersService.resendShipmentNotice(orderId),
+    (p) => p.orderId,
+  );
 }
 
 export type { Order };
