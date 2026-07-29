@@ -97,6 +97,13 @@ export const sidebarItems: NavGroup[] = [
         iconActive: "/menu-icons/pedidos-active.svg",
       },
       {
+        title: "Chat",
+        url: "/dashboard/chat",
+        icon: MessageSquare,
+        iconNormal: "/menu-icons/chat-normal.png",
+        iconActive: "/menu-icons/chat-active.png",
+      },
+      {
         title: "Productos",
         url: "/dashboard/productos",
         icon: Package,
@@ -115,13 +122,6 @@ export const sidebarItems: NavGroup[] = [
           { title: "Clientes", url: "/dashboard/usuarios?tab=clientes", icon: Users },
           { title: "Empleados", url: "/dashboard/usuarios?tab=empleados", icon: BadgeCheck },
         ],
-      },
-      {
-        title: "Chat",
-        url: "/dashboard/chat",
-        icon: MessageSquare,
-        iconNormal: "/menu-icons/chat-normal.png",
-        iconActive: "/menu-icons/chat-active.png",
       },
     ],
   },
