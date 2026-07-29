@@ -1,12 +1,7 @@
-import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { IntegracionesView } from "./_components/integraciones-view";
-
-export const metadata: Metadata = {
-  title: "Integraciones | Squad Fit",
-  description: "Salud de las integraciones externas del sistema",
-};
-
-export default function IntegracionesPage() {
-  return <IntegracionesView />;
+// Reestructura del menú (spec 27-jul): Integraciones es ahora la pestaña Integraciones dentro de Ajustes.
+// Redirect para no romper los enlaces guardados.
+export default function Page() {
+  redirect("/dashboard/ajustes?tab=integraciones");
 }
