@@ -24,8 +24,6 @@ import {
   ExternalLink,
   Target,
   Flame,
-  Ruler,
-  Scale,
   Activity,
   EyeOff,
 } from "lucide-react";
@@ -41,6 +39,7 @@ import { useClientProfile, type ClientAccess } from "@/hooks/use-client-profile"
 import { useStaffRole } from "@/hooks/use-staff-role";
 import { canGrantProducts, visibleFichaSections } from "@/lib/ficha-visibility";
 
+import { ClientProgressSection } from "./client-progress-section";
 import { StaffNotesSection } from "./staff-notes-section";
 
 /** Píldora de caducidad para accesos de curso / suscripciones. */
@@ -516,62 +515,8 @@ export function ClientProfileView({ userId }: ClientProfileViewProps) {
         </Card>
       )}
 
-      {/* Progreso */}
-      {tab === "progreso" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="size-5" /> Progreso
-            </CardTitle>
-            <CardDescription>Estado actual y evolución de las medidas del cliente.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : detail ? (
-              <div className="flex flex-col">
-                <DataRow
-                  icon={<Scale className="size-4" />}
-                  label="Peso actual"
-                  value={detail.weight != null ? `${detail.weight} kg` : undefined}
-                />
-                <DataRow
-                  icon={<Ruler className="size-4" />}
-                  label="Altura"
-                  value={detail.height != null ? `${detail.height} cm` : undefined}
-                />
-                <DataRow
-                  label="IMC"
-                  value={
-                    detail.weight != null && detail.height != null && detail.height > 0
-                      ? (detail.weight / Math.pow(detail.height / 100, 2)).toFixed(1)
-                      : undefined
-                  }
-                />
-                <DataRow
-                  icon={<CalendarClock className="size-4" />}
-                  label="Último acceso a la app"
-                  value={
-                    detail.last_logged_in_time
-                      ? new Date(detail.last_logged_in_time).toLocaleString("es-ES")
-                      : undefined
-                  }
-                />
-              </div>
-            ) : (
-              <BackendPending>
-                Sin el detalle de usuario aún no hay medidas que mostrar (<code>USER_DETAIL_API_READY</code>).
-              </BackendPending>
-            )}
-            <BackendPending>
-              La <strong>serie histórica</strong> (peso/medidas a lo largo del tiempo, adherencia al plan y hábitos)
-              necesita un endpoint nuevo, propuesto como <code>GET /admin-panel/users/:id/progress?from&to</code>{" "}
-              devolviendo <code>{`[{ date, weight, measurements?, habits_score? }]`}</code> — conectará también con el
-              motor de hábitos de Alertas (ver INFORME-FASE-17).
-            </BackendPending>
-          </CardContent>
-        </Card>
-      )}
+      {/* Progreso — serie real de la Tabla progreso clientes (F3 nº 138). */}
+      {tab === "progreso" && <ClientProgressSection userId={userId} />}
 
       {/* Notas de staff */}
       {tab === "notas" && <StaffNotesSection userId={userId} authorRole={role} />}
