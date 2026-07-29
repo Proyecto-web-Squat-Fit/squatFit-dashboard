@@ -97,8 +97,12 @@ export type LeadState = (typeof LEAD_STATES)[number];
 /** Estados que entran en el kanban «Repesca». */
 export const REPESCA_STATES: readonly LeadState[] = ["Perdido", "Seguimiento"];
 
-/** Orígenes soportados por el filtro (enum backend: web|instagram|email|youtube|otro). */
-export const LEAD_SOURCES = ["web", "ig", "email", "youtube", "otro"] as const;
+/** Orígenes soportados por el filtro (enum backend: web|instagram|email|youtube|sorteo|otro).
+ *
+ * «sorteo» es la landing del WordPress viejo (`/sorteo-programa-tu-mejor-version`),
+ * que sigue trayendo gente meses después de cerrarse. Va aparte de «web» porque
+ * es justo lo que hay que poder medir: cuánta cola arrastra. */
+export const LEAD_SOURCES = ["web", "ig", "email", "youtube", "sorteo", "otro"] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 
 export const LEAD_SOURCE_LABEL: Record<LeadSource, string> = {
@@ -106,6 +110,7 @@ export const LEAD_SOURCE_LABEL: Record<LeadSource, string> = {
   ig: "Instagram",
   email: "Email",
   youtube: "YouTube",
+  sorteo: "Sorteo",
   otro: "Otro",
 };
 
@@ -315,6 +320,7 @@ const SOURCE_ALIASES: Record<string, LeadSource> = {
   mail: "email",
   youtube: "youtube",
   yt: "youtube",
+  sorteo: "sorteo",
   otro: "otro",
   otros: "otro",
   other: "otro",
@@ -445,6 +451,7 @@ const SOURCE_TO_API: Record<LeadSource, string> = {
   ig: "instagram",
   email: "email",
   youtube: "youtube",
+  sorteo: "sorteo",
   otro: "otro",
 };
 

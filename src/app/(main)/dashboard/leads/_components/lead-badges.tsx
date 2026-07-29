@@ -1,4 +1,4 @@
-import { Instagram, Globe, BadgeCheck, Euro, Tag } from "lucide-react";
+import { Instagram, Globe, Gift, BadgeCheck, Euro, Tag } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -51,7 +51,7 @@ export function LeadStateBadge({ state, className }: { state: LeadState; classNa
 }
 
 export function LeadSourceBadge({ source }: { source: LeadSource }) {
-  const Icon = source === "ig" ? Instagram : Globe;
+  const Icon = source === "ig" ? Instagram : source === "sorteo" ? Gift : Globe;
   return (
     <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
       <Icon className="size-3.5" />
