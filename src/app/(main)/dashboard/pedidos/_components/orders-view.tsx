@@ -42,11 +42,12 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-/** Pestañas: Todos + los 5 estados del diseño, con contador. */
+/** Pestañas: Todos + los estados del diseño (con «Enviado»), con contador. */
 const STATUS_TABS: { id: OrderStatus | "all"; countKey: string }[] = [
   { id: "all", countKey: "all" },
   { id: "pending", countKey: "pending" },
   { id: "processing", countKey: "processing" },
+  { id: "shipped", countKey: "shipped" },
   { id: "completed", countKey: "completed" },
   { id: "refunded", countKey: "refunded" },
   { id: "cancelled", countKey: "cancelled" },
@@ -203,7 +204,7 @@ export function OrdersView() {
                   ) : (
                     visibleOrders.map((o) => {
                       const struck = o.status === "refunded" || o.status === "cancelled";
-                      const canComplete = o.status === "pending" || o.status === "processing";
+                      const canComplete = o.status === "pending" || o.status === "processing" || o.status === "shipped";
                       // Estado por fila: solo la fila mutada muestra spinner / se deshabilita.
                       const isCompleting = updateStatus.isPending && updateStatus.variables?.id === o.id;
                       const isEmailing = sendEmail.isPending && sendEmail.variables?.id === o.id;
@@ -288,7 +289,7 @@ export function OrdersView() {
                               >
                                 {isEmailing ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
                               </Button>
-                              {(o.status === "completed" || o.status === "processing") && (
+                              {(o.status === "completed" || o.status === "processing" || o.status === "shipped") && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
