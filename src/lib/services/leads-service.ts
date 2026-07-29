@@ -27,9 +27,14 @@ const REQUEST_TIMEOUT = 12000;
 //
 // Verificado contra prod 21-jul-2026 (token admin): `GET /admin-panel/leads`
 // → 200 con los 8 estados en `counts`; `convert` → existe (404 "Lead no
-// encontrado" con id inexistente). El endpoint `leads/:id/notes` NO existe
-// en backend (notes es una columna de texto única); el composer de notas solo
-// persiste en modo demo hasta que backend publique una colección de notas.
+// encontrado" con id inexistente).
+//
+// `POST leads/:id/notes` (auditoría julio, low-sev "carrera en notas de
+// lead"): añadido en el backend para concatenar la nota en una sola
+// sentencia SQL, sin el read-modify-write que perdía notas con dos ediciones
+// a la vez. `addNote()` de abajo lo prueba primero y solo cae al PUT viejo
+// (mismo riesgo de carrera) si la ruta responde 404 — o sea, hasta que ese
+// backend esté desplegado. Verificar contra prod antes de dar esto por hecho.
 //
 // OJO: la tabla `leads` está VACÍA en prod (total=0) hasta que se corra el
 // import de ~160 leads (`scripts/import-leads.ts --commit`). Hasta entonces
@@ -1001,8 +1006,43 @@ export class LeadsService {
       lead.updated_at = nowIso();
       return note;
     }
-    // El backend no tiene endpoint de notas: se anexa a la columna de texto
-    // `notes` (línea `[ISO] cuerpo`) leyendo el valor actual y reescribiéndolo.
+
+    // Auditoría julio (low-sev "carrera en notas de lead"): dos personas
+    // anotando el mismo lead a la vez perdían una nota, porque el único
+    // camino era leer `notes`, concatenar aquí y reescribir el campo entero
+    // — sin bloqueo, el segundo PUT pisaba al primero. El backend nuevo
+    // concatena en una sola sentencia SQL (`POST leads/:id/notes`), así que
+    // se prueba primero y solo se cae al camino viejo si el endpoint aún no
+    // está desplegado (404 de ruta inexistente, no un error real).
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/admin-panel/leads/${id}/notes`, {
+        method: "POST",
+        headers: this.authHeaders(),
+        body: JSON.stringify({ body }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+      });
+      if (res.status === 401) {
+        handleUnauthorized();
+        throw new Error("Sesión caducada");
+      }
+      if (res.status !== 404) {
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(errBody.message ?? errBody.error ?? `Error ${res.status}`);
+        }
+        return { id: `n-${Date.now()}`, body, author: "Staff", created_at: nowIso() };
+      }
+      // 404 → sigue el fallback de abajo (ruta todavía no desplegada).
+    } catch (err) {
+      if (err instanceof Error && err.message !== "Failed to fetch" && !/NetworkError|fetch/i.test(err.message)) {
+        throw err; // error real del endpoint nuevo (401, 400…): no lo ocultes con el fallback
+      }
+      // Red caída o endpoint no desplegable: cae al camino viejo igualmente.
+    }
+
+    // Fallback (backend sin el endpoint dedicado todavía): mismo riesgo de
+    // carrera que antes, documentado arriba — se retira solo en cuanto el
+    // 404 de arriba deje de darse.
     const current = await this.request<any>(`/api/v1/admin-panel/leads/${id}`, {
       headers: this.authHeaders(),
     });

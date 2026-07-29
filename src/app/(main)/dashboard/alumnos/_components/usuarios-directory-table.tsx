@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import Link from "next/link";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Download, Eye, Pencil, Search } from "lucide-react";
+import { Download, Eye, IdCard, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { BulkActionsBar } from "@/components/data-table/bulk-actions-bar";
@@ -190,7 +192,7 @@ export function UsuariosDirectoryTable() {
               variant="ghost"
               size="icon"
               className="size-7 hover:bg-[#EBEAF2]"
-              title="Ver ficha"
+              title="Vista rápida"
               onClick={() => setDetailUser(row.original)}
             >
               <Eye className="h-4 w-4 text-[#363C98]" />
@@ -203,6 +205,20 @@ export function UsuariosDirectoryTable() {
               onClick={() => setEditUser(row.original)}
             >
               <Pencil className="h-4 w-4 text-[#363C98]" />
+            </Button>
+            {/* Ficha técnica completa (accesos, notas de staff…), no solo la
+                vista rápida de arriba — auditoría julio, "ficha del cliente
+                accesible desde más sitios". */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 hover:bg-[#EBEAF2]"
+              title="Ver ficha completa"
+              asChild
+            >
+              <Link href={`/dashboard/alumnos/${row.original.id}`}>
+                <IdCard className="h-4 w-4 text-[#363C98]" />
+              </Link>
             </Button>
           </div>
         ),
@@ -448,6 +464,11 @@ export function UsuariosDirectoryTable() {
                   </Badge>
                 ))}
               </div>
+              <Button asChild variant="outline" size="sm" className="mt-1 w-fit">
+                <Link href={`/dashboard/alumnos/${detailUser.id}`}>
+                  <IdCard className="mr-1.5 h-4 w-4" /> Ver ficha completa
+                </Link>
+              </Button>
             </div>
           )}
         </DialogContent>

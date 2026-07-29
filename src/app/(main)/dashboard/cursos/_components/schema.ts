@@ -18,6 +18,11 @@ export const cursoApiSchema = z.object({
   image: z.string().nullable().optional(),
   video_presentation: z.string().nullable().optional(),
   students: z.number().default(0),
+  // `GET admin-panel/courses` ya lo devuelve (CourseRepository.getCourses
+  // hace SELECT ...active); antes de esto se ignoraba y el badge de la tabla
+  // mostraba "Activo" siempre, aunque el curso estuviera desactivado de
+  // verdad — el toggle escribía bien en el backend pero la lectura mentía.
+  active: z.boolean().optional(),
 });
 
 // Schema adaptado para la UI (mantiene compatibilidad con componentes existentes)
