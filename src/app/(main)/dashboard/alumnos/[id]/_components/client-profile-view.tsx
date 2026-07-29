@@ -32,13 +32,14 @@ import {
 
 import { BrandTabs } from "@/components/brand-tabs";
 import { GrantProductDialog } from "@/components/modals/grant-product-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientProfile, type ClientAccess } from "@/hooks/use-client-profile";
 import { useStaffRole } from "@/hooks/use-staff-role";
+import { avatarSrc } from "@/lib/avatar";
 import { canGrantProducts, visibleFichaSections } from "@/lib/ficha-visibility";
 
 import { StaffNotesSection } from "./staff-notes-section";
@@ -144,7 +145,12 @@ export function ClientProfileView({ userId }: ClientProfileViewProps) {
         <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Volver">
           <ArrowLeft className="size-5" />
         </Button>
+        {/* La ficha SÍ trae `gender` (el listado de alumnos no), así que aquí
+            se puede enseñar el avatar que le toca en vez de las iniciales. Si
+            el sexo está vacío —que es lo más común— sale el neutro, y si la
+            imagen no cargara siguen quedando las iniciales debajo. */}
         <Avatar className="size-12">
+          <AvatarImage src={avatarSrc(null, detail?.gender)} alt={fullName} />
           <AvatarFallback className="bg-blue-100 font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
             {initials}
           </AvatarFallback>

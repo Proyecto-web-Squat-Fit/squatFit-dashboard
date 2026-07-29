@@ -23,7 +23,11 @@ export async function GET() {
       user: {
         email: user.email,
         role: user.role,
-        // No incluir información sensible como sub o iat
+        // El nombre va porque es lo que se pinta en el menú y en Perfil; sin
+        // esto el panel saludaba con el email. Sigue sin salir `sub` ni `iat`,
+        // que es lo que este endpoint quería mantener fuera.
+        firstName: user.firstName,
+        lastName: user.lastName,
       },
     });
   } catch (error) {
