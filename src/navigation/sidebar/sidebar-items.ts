@@ -1,6 +1,7 @@
 import {
   MessageSquare,
   Users,
+  BadgeCheck,
   LayoutDashboard,
   GraduationCap,
   ShoppingCart,
@@ -110,6 +111,11 @@ export const sidebarItems: NavGroup[] = [
         iconNormal: "/menu-icons/usuarios-normal.svg",
         iconActive: "/menu-icons/usuarios-active.svg",
         roles: ADMIN,
+        landing: true,
+        subItems: [
+          { title: "Clientes", url: "/dashboard/usuarios?tab=clientes", icon: Users },
+          { title: "Empleados", url: "/dashboard/usuarios?tab=empleados", icon: BadgeCheck },
+        ],
       },
       {
         title: "Chat",
