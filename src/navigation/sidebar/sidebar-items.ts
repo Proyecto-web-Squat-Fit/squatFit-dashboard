@@ -76,6 +76,15 @@ const ADMIN_SOPORTE = ["admin", "support", "soporte"];
 // - Pautas → sección nueva Programas · Nutri con página landing
 // - Grupo CRM (Leads · Downsell · Cupones) · Integraciones (salud) · Ajustes
 // Las rutas viejas redirigen a las nuevas (ver redirects y pages con redirect()).
+//
+// SEGUNDA PASADA (spec de Hamlet, 29-jul-2026):
+// - Usuarios gana landing propia con subItems Clientes/Empleados (y, solo
+//   para admin, una pestaña Permisos dentro de la vista).
+// - CRM gana landing propia (antes iba directo a Leads).
+// - Integraciones deja de ser item de primer nivel y pasa a ser una pestaña
+//   dentro de Ajustes ("la casa"); su gating admin+soporte ahora vive dentro
+//   del propio componente, ya no en `roles` del sidebar.
+// - Chat sube justo después de Pedidos en el grupo Principal.
 // ============================================================================
 export const sidebarItems: NavGroup[] = [
   {
@@ -211,7 +220,10 @@ export const sidebarItems: NavGroup[] = [
  * Filtra los items del sidebar según el rol del usuario.
  * - `roles` sin definir en el item → lo ve todo el staff.
  * - "admin" lo ve todo.
- * - "support"/"soporte" ve además lo marcado ADMIN_SOPORTE (CRM, Integraciones).
+ * - "support"/"soporte" ve además lo marcado ADMIN_SOPORTE (hoy solo CRM).
+ *   Integraciones ya no es item de primer nivel: vive como pestaña dentro de
+ *   Ajustes (roles: admin), así que soporte pierde el enlace del menú aunque
+ *   su propio componente lo siga admitiendo si llega por URL directa.
  * @param userRole - Rol del usuario actual
  * @returns Array de NavGroup filtrado según el rol
  */
