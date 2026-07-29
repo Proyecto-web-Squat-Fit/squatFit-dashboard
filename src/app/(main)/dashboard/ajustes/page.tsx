@@ -1,6 +1,8 @@
+import { Suspense } from "react";
+
 import { Metadata } from "next";
 
-import { UnderConstruction } from "@/components/under-construction";
+import { AjustesView } from "./_components/ajustes-view";
 
 export const metadata: Metadata = {
   title: "Ajustes | Squad Fit",
@@ -9,9 +11,8 @@ export const metadata: Metadata = {
 
 export default function AjustesPage() {
   return (
-    <UnderConstruction
-      title="Ajustes"
-      description="Configuración general del back office: preferencias del panel, textos y parámetros que hoy están repartidos o hardcodeados."
-    />
+    <Suspense>
+      <AjustesView />
+    </Suspense>
   );
 }

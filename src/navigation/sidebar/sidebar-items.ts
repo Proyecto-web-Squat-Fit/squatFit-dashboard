@@ -19,7 +19,6 @@ import {
   Megaphone,
   CalendarCheck,
   FolderOpen,
-  Plug,
   Settings,
   CookingPot,
   type LucideIcon,
@@ -198,13 +197,6 @@ export const sidebarItems: NavGroup[] = [
     id: 5,
     label: "Sistema",
     items: [
-      {
-        title: "Integraciones",
-        url: "/dashboard/integraciones",
-        icon: Plug,
-        roles: ADMIN_SOPORTE,
-        isNew: true,
-      },
       {
         title: "Ajustes",
         url: "/dashboard/ajustes",
