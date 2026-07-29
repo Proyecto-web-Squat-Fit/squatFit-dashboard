@@ -205,7 +205,7 @@ export function PedidoDetailModal({
 
         <DialogFooter className="flex-wrap gap-2 sm:justify-start">
           <Button variant="outline" size="sm" className="gap-1" asChild>
-            <Link href="/dashboard/alumnos">
+            <Link href="/dashboard/usuarios">
               <UserRound className="h-4 w-4" /> Ver cliente
             </Link>
           </Button>

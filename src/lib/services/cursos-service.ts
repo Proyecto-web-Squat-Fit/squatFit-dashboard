@@ -299,7 +299,11 @@ export class CursosService {
       instructor: instructorName,
       price: priceNumber,
       currency: "€",
-      status: "Activo",
+      // Antes esto era el string fijo "Activo": el badge y el filtro de la
+      // tabla ignoraban el `active` real del curso (mentira útil para el
+      // mock, pero en producción escondía los cursos ya desactivados y
+      // deshacía el toggle en cuanto se refrescaba la lista tras usarlo).
+      status: apiCurso.active === false ? "Inactivo" : "Activo",
       students,
       duration: "8 semanas", // Valor por defecto
       level: "Principiante", // Valor por defecto

@@ -3,19 +3,24 @@ import {
   Users,
   LayoutDashboard,
   GraduationCap,
-  BookOpen,
-  Package,
-  Tags,
   ShoppingCart,
+  Package,
   UtensilsCrossed,
   Apple,
   ChefHat,
   FileText,
   TrendingUp,
   Dumbbell,
-  BarChart3,
   Contact,
   BadgePercent,
+  ArrowLeftRight,
+  TicketPercent,
+  Megaphone,
+  CalendarCheck,
+  FolderOpen,
+  Plug,
+  Settings,
+  CookingPot,
   type LucideIcon,
 } from "lucide-react";
 
@@ -34,11 +39,21 @@ export interface NavMainItem {
   icon?: LucideIcon;
   // Iconos propios del diseño (PNG/SVG): normal (índigo) y activo (naranja).
   // Si están presentes, tienen prioridad sobre `icon` (lucide). Las secciones
-  // creadas después del diseño (Catálogo, Leads, Downsell) aún no tienen SVG
-  // propio y usan lucide como respaldo.
+  // creadas después del diseño aún no tienen SVG propio y usan lucide.
   iconNormal?: string;
   iconActive?: string;
   subItems?: NavSubItem[];
+  /**
+   * Si es true, el item CON subItems también navega a `url` al clicarlo
+   * (p. ej. Nutri, que tiene página landing propia). El desplegable se abre
+   * con el chevron o con el hover-preview.
+   */
+  landing?: boolean;
+  /**
+   * Roles que ven este item. Sin definir = todos los roles de staff.
+   * "admin" siempre lo ve todo.
+   */
+  roles?: string[];
   comingSoon?: boolean;
   newTab?: boolean;
   isNew?: boolean;
@@ -50,10 +65,22 @@ export interface NavGroup {
   items: NavMainItem[];
 }
 
+const ADMIN = ["admin"];
+const ADMIN_SOPORTE = ["admin", "support", "soporte"];
+
+// ============================================================================
+// REESTRUCTURA DEL MENÚ (spec de Hamlet, 27-jul-2026)
+// - Catálogo → Productos (absorbe Packs como pestaña interna)
+// - Libros → Cocina · Equipo → pestaña Empleados dentro de Usuarios
+// - Dieta desglosada en Lista de Alimentos / Banco de Recetas / Sustituciones
+// - Pautas → sección nueva Programas · Nutri con página landing
+// - Grupo CRM (Leads · Downsell · Cupones) · Integraciones (salud) · Ajustes
+// Las rutas viejas redirigen a las nuevas (ver redirects y pages con redirect()).
+// ============================================================================
 export const sidebarItems: NavGroup[] = [
   {
     id: 1,
-    label: "Inicio",
+    label: "Principal",
     items: [
       {
         title: "Inicio",
@@ -63,59 +90,26 @@ export const sidebarItems: NavGroup[] = [
         iconActive: "/menu-icons/inicio-active.png",
       },
       {
-        title: "Equipo",
-        url: "/dashboard/equipo",
-        icon: Users,
-        iconNormal: "/menu-icons/equipo-normal.svg",
-        iconActive: "/menu-icons/equipo-active.svg",
-      },
-      {
-        title: "Cursos",
-        url: "/dashboard/cursos",
-        icon: GraduationCap,
-        iconNormal: "/menu-icons/cursos-normal.png",
-        iconActive: "/menu-icons/cursos-active.png",
-      },
-      {
-        title: "Libros",
-        url: "/dashboard/libros",
-        icon: BookOpen,
-        iconNormal: "/menu-icons/libros-normal.png",
-        iconActive: "/menu-icons/libros-active.png",
-      },
-      {
-        title: "Packs",
-        url: "/dashboard/packs",
-        icon: Package,
-        iconNormal: "/menu-icons/productos-normal.svg",
-        iconActive: "/menu-icons/productos-active.svg",
-      },
-      {
-        title: "Catálogo",
-        url: "/dashboard/catalogo",
-        icon: Tags,
-        isNew: true,
-      },
-      {
         title: "Pedidos",
         url: "/dashboard/pedidos",
         icon: ShoppingCart,
         iconNormal: "/menu-icons/pedidos-normal.svg",
         iconActive: "/menu-icons/pedidos-active.svg",
-        isNew: true,
       },
-    ],
-  },
-  {
-    id: 2,
-    label: "Clientes",
-    items: [
+      {
+        title: "Productos",
+        url: "/dashboard/productos",
+        icon: Package,
+        iconNormal: "/menu-icons/productos-normal.svg",
+        iconActive: "/menu-icons/productos-active.svg",
+      },
       {
         title: "Usuarios",
-        url: "/dashboard/alumnos",
+        url: "/dashboard/usuarios",
         icon: Users,
         iconNormal: "/menu-icons/usuarios-normal.svg",
         iconActive: "/menu-icons/usuarios-active.svg",
+        roles: ADMIN,
       },
       {
         title: "Chat",
@@ -124,135 +118,115 @@ export const sidebarItems: NavGroup[] = [
         iconNormal: "/menu-icons/chat-normal.png",
         iconActive: "/menu-icons/chat-active.png",
       },
-      // {
-      //   title: "Soporte",
-      //   url: "/dashboard/support",
-      //   icon: Headphones,
-      // },
     ],
   },
   {
-    id: 6,
-    label: "CRM",
+    id: 2,
+    label: "Marketing",
     items: [
       {
-        title: "Leads",
+        title: "CRM",
         url: "/dashboard/leads",
-        icon: Contact,
-        isNew: true,
-      },
-      {
-        title: "Downsell",
-        url: "/dashboard/downsell",
-        icon: BadgePercent,
-        isNew: true,
+        icon: Megaphone,
+        roles: ADMIN_SOPORTE,
+        subItems: [
+          { title: "Leads", url: "/dashboard/leads", icon: Contact },
+          { title: "Downsell", url: "/dashboard/downsell", icon: BadgePercent },
+          { title: "Cupones", url: "/dashboard/cupones", icon: TicketPercent, isNew: true },
+        ],
       },
     ],
   },
   {
     id: 3,
+    label: "Entrenamiento",
+    items: [
+      {
+        title: "Programas",
+        url: "/dashboard/pautas",
+        icon: Dumbbell,
+        subItems: [
+          { title: "Pautas", url: "/dashboard/pautas", icon: FileText },
+          { title: "Mi plan", url: "/dashboard/programas/plan", icon: CalendarCheck },
+          { title: "Recursos", url: "/dashboard/programas/recursos", icon: FolderOpen },
+          { title: "Progreso de clientes", url: "/dashboard/seguimiento", icon: TrendingUp },
+        ],
+      },
+      {
+        title: "Cursos",
+        url: "/dashboard/cursos",
+        icon: GraduationCap,
+        iconNormal: "/menu-icons/cursos-normal.png",
+        iconActive: "/menu-icons/cursos-active.png",
+        roles: ADMIN,
+      },
+    ],
+  },
+  {
+    id: 4,
     label: "Nutrición",
     items: [
       {
         title: "Nutri",
         url: "/dashboard/nutri",
         icon: UtensilsCrossed,
+        landing: true,
         subItems: [
-          {
-            title: "Dieta",
-            url: "/dashboard/dieta",
-            icon: Apple,
-          },
-          {
-            title: "Recetas",
-            url: "/dashboard/recetas",
-            icon: ChefHat,
-            isNew: true,
-          },
-          {
-            title: "Pautas",
-            url: "/dashboard/pautas",
-            icon: FileText,
-          },
-          {
-            title: "Seguimiento",
-            url: "/dashboard/seguimiento",
-            icon: TrendingUp,
-          },
+          { title: "Lista de Alimentos", url: "/dashboard/nutri/alimentos", icon: Apple },
+          { title: "Banco de Recetas", url: "/dashboard/recetas", icon: ChefHat },
+          { title: "Sustituciones", url: "/dashboard/nutri/sustituciones", icon: ArrowLeftRight },
         ],
+      },
+      {
+        title: "Cocina",
+        url: "/dashboard/cocina",
+        icon: CookingPot,
+        iconNormal: "/menu-icons/libros-normal.png",
+        iconActive: "/menu-icons/libros-active.png",
+        roles: ADMIN,
       },
     ],
   },
-  // {
-  //   id: 4,
-  //   label: "Operaciones",
-  //   items: [
-  //     {
-  //       title: "Trainer",
-  //       url: "/dashboard/trainer",
-  //       icon: Dumbbell,
-  //     },
-  //     // {
-  //     //   title: "Ventas",
-  //     //   url: "/dashboard/ventas",
-  //     //   icon: ShoppingCart,
-  //     // },
-  //   ],
-  // },
-  // {
-  //   id: 5,
-  //   label: "Marketing",
-  //   items: [
-  //     {
-  //       title: "Marketing y KPIs",
-  //       url: "/dashboard/marketing",
-  //       icon: BarChart3,
-  //       isNew: true,
-  //     },
-  //   ],
-  // },
+  {
+    id: 5,
+    label: "Sistema",
+    items: [
+      {
+        title: "Integraciones",
+        url: "/dashboard/integraciones",
+        icon: Plug,
+        roles: ADMIN_SOPORTE,
+        isNew: true,
+      },
+      {
+        title: "Ajustes",
+        url: "/dashboard/ajustes",
+        icon: Settings,
+        roles: ADMIN,
+      },
+    ],
+  },
 ];
 
-// Rutas que solo ve un admin. Ojo: la ruta de Equipo pasó de
-// /dashboard/entrenadores a /dashboard/equipo con el rediseño.
-const SOLO_ADMIN = ["/dashboard/equipo", "/dashboard/cursos", "/dashboard/libros", "/dashboard/packs"];
-
 /**
- * Filtra los items del sidebar según el rol del usuario
- * - Solo "admin" ve Equipo, Cursos, Libros, Packs y Usuarios
- * - Solo "admin" y "support" ven Marketing (5) y CRM (6)
+ * Filtra los items del sidebar según el rol del usuario.
+ * - `roles` sin definir en el item → lo ve todo el staff.
+ * - "admin" lo ve todo.
+ * - "support"/"soporte" ve además lo marcado ADMIN_SOPORTE (CRM, Integraciones).
  * @param userRole - Rol del usuario actual
  * @returns Array de NavGroup filtrado según el rol
  */
 export const getSidebarItemsForRole = (userRole: string | null | undefined): NavGroup[] => {
-  const sinRestringidos = (grupos: NavGroup[]) =>
-    grupos.map((group) => {
-      if (group.id === 1) {
-        return { ...group, items: group.items.filter((item) => !SOLO_ADMIN.includes(item.url)) };
-      }
-      if (group.id === 2) {
-        return { ...group, items: group.items.filter((item) => item.url !== "/dashboard/alumnos") };
-      }
-      return group;
-    });
+  const role = userRole?.toLowerCase();
 
-  if (!userRole) {
-    // Sin rol: además de los restringidos, se ocultan Marketing (5) y CRM (6)
-    return sinRestringidos(sidebarItems.filter((group) => group.id !== 5 && group.id !== 6));
-  }
-
-  const role = userRole.toLowerCase();
-
-  // Admin ve todos los items
   if (role === "admin") {
     return sidebarItems;
   }
 
-  // Soporte ve Marketing y CRM, pero no las secciones de solo-admin
-  if (role === "support" || role === "soporte") {
-    return sinRestringidos(sidebarItems);
-  }
-
-  // Otros roles staff: sin restringidos, sin Marketing ni CRM
-  return sinRestringidos(sidebarItems.filter((group) => group.id !== 5 && group.id !== 6));
+  return sidebarItems
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.roles || (role && item.roles.includes(role))),
+    }))
+    .filter((group) => group.items.length > 0);
 };

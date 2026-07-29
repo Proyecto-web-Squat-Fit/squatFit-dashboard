@@ -1,13 +1,12 @@
+import { Metadata } from "next";
+
+import { NutriLanding } from "./_components/nutri-landing";
+
+export const metadata: Metadata = {
+  title: "Nutri | Squad Fit",
+  description: "Panel de nutrición: alimentos, recetas y sustituciones",
+};
+
 export default function NutriPage() {
-  return (
-    <div className="@container/main flex flex-col gap-4 md:gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">Nutri</h1>
-        <p className="text-muted-foreground">Gestión de nutricionistas y planes nutricionales.</p>
-      </div>
-      <div className="bg-card rounded-lg border p-6">
-        <p className="text-muted-foreground text-sm">Contenido de Nutri - En desarrollo</p>
-      </div>
-    </div>
-  );
+  return <NutriLanding />;
 }
