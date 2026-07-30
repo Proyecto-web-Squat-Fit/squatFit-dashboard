@@ -16,7 +16,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { EditablePill } from "@/components/ui/editable-pill";
 
 import { EntrenadorUI } from "./schema";
@@ -107,7 +106,7 @@ export const getEntrenadoresColumns = (handlers: ColumnHandlers = {}): ColumnDef
   },
   {
     accessorKey: "fullName",
-    meta: { label: "Nombre" },
+    meta: { label: "Nombre", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Entrenador" />,
     cell: ({ row }) => {
       const initials = getInitials(row.original.firstName, row.original.lastName);

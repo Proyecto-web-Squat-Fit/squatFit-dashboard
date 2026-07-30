@@ -1,10 +1,10 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Trash2, Eye, Mail, Activity, PackagePlus } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Eye, Mail, PackagePlus } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -119,6 +119,7 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
   },
   {
     accessorKey: "fullName",
+    meta: { label: "Alumno", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Alumno" />,
     cell: ({ row }) => {
       const initials = getInitials(row.original.firstName, row.original.lastName);
@@ -140,11 +141,13 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
   },
   {
     accessorKey: "username",
+    meta: { label: "Usuario" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" />,
     cell: ({ row }) => <span className="font-mono text-sm">@{row.original.username}</span>,
   },
   {
     accessorKey: "birth",
+    meta: { label: "Fecha de nacimiento" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha de Nacimiento" />,
     cell: ({ row }) => {
       if (!row.original.birth) {
@@ -168,6 +171,7 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
   },
   {
     accessorKey: "role",
+    meta: { label: "Rol" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Rol" />,
     cell: ({ row }) => getRoleBadge(row.original.role),
     filterFn: (row, id, value) => {
@@ -176,6 +180,7 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
   },
   {
     accessorKey: "status",
+    meta: { label: "Estado", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
     cell: ({ row }) => getStatusBadge(row.original.status),
     filterFn: (row, id, value) => {
@@ -205,10 +210,11 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
               <Eye className="mr-2 h-4 w-4" />
               Ver perfil completo
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Activity className="mr-2 h-4 w-4" />
-              Ver actividad
-            </DropdownMenuItem>
+            {/* «Ver actividad» estaba aquí sin `onClick`: se podía pulsar y no
+                pasaba nada. Un botón que no hace nada es peor que no tenerlo —
+                quien lo pulsa cree que la pantalla está rota. Se quita hasta que
+                exista la vista de actividad; «Ver perfil completo», que sí
+                funciona, ya lleva a la ficha con todo su historial. */}
             {alumno.email && (
               <DropdownMenuItem onClick={() => window.open(`mailto:${alumno.email}`, "_blank")}>
                 <Mail className="mr-2 h-4 w-4" />
