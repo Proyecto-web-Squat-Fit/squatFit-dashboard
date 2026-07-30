@@ -23,6 +23,7 @@ import {
   type LeadObjection,
   type LeadSource,
   type LeadState,
+  type UpdateLeadInput,
 } from "@/lib/services/leads-service";
 import { cn } from "@/lib/utils";
 
@@ -100,7 +101,10 @@ export function LeadsView() {
   );
 
   // Etiquetas disponibles para el filtro (todas las que llevan los leads).
-  const allTags = useMemo(() => [...new Set(leads.flatMap((l) => l.tags))].sort((a, b) => a.localeCompare(b, "es")), [leads]);
+  const allTags = useMemo(
+    () => [...new Set(leads.flatMap((l) => l.tags))].sort((a, b) => a.localeCompare(b, "es")),
+    [leads],
+  );
 
   const visibleLeads = useMemo(() => {
     let out = leads;
@@ -160,6 +164,16 @@ export function LeadsView() {
     );
     setLostCandidate(null);
   };
+
+  /**
+   * Guarda un cambio hecho desde una celda de la tabla.
+   *
+   * Usa `mutateAsync` y NO `mutate` a propósito: la celda pinta el valor nuevo
+   * al instante y necesita que esto LANCE si el servidor lo rechaza, para poder
+   * volver al valor anterior. Con `mutate` (que no devuelve promesa) la celda se
+   * quedaría enseñando un valor que no se guardó.
+   */
+  const guardarCelda = (id: string, patch: UpdateLeadInput) => updateLead.mutateAsync({ id, patch });
 
   const handleSetObjection = (id: string, objection: LeadObjection) => {
     updateLead.mutate(
@@ -313,7 +327,12 @@ export function LeadsView() {
       ) : view === "tabla" ? (
         <Card>
           <CardContent className="pt-6">
-            <LeadsTable leads={visibleLeads} onOpen={handleOpen} />
+            <LeadsTable
+              leads={visibleLeads}
+              onOpen={handleOpen}
+              onConvertir={(lead) => handleOpen(lead)}
+              onGuardar={guardarCelda}
+            />
           </CardContent>
         </Card>
       ) : view === "pipeline" ? (
