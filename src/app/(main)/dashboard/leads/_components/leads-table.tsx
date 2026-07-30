@@ -1,100 +1,134 @@
 "use client";
 
-import Link from "next/link";
+import * as React from "react";
 
-import { BadgeCheck, Mail, Phone } from "lucide-react";
+import { toast } from "sonner";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Lead } from "@/lib/services/leads-service";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
+import type { Lead, UpdateLeadInput } from "@/lib/services/leads-service";
 
-import { LeadObjectionBadge, LeadSourceBadge, LeadStateBadge } from "./lead-badges";
+import { construirColumnasLeads } from "./columns.leads";
 
+/**
+ * TABLA DE LEADS — cumple la norma «formato de tablas» (30-jul-2026).
+ *
+ * Era un `<table>` a pelo con siete cabeceras fijas: sin redimensionar, sin
+ * ocultar, sin reordenar y sin poder editar nada desde la fila; para cambiar un
+ * estado había que abrir el panel del lead. Ahora pasa por
+ * `useDataTableInstance` como Pedidos y Usuarios, así que hereda anchura
+ * personalizable (ya sin mínimo), ocultar/mostrar, reordenar arrastrando —en la
+ * cabecera y en la lista de «Vista»— y la vista guardada por usuario con la clave
+ * `leads`.
+ *
+ * Los seis estados comerciales se cambian en la propia fila. El guardado
+ * optimista y la vuelta atrás si el servidor rechaza viven dentro de la celda;
+ * aquí solo se orquesta.
+ */
 interface LeadsTableProps {
   leads: Lead[];
   onOpen: (lead: Lead) => void;
+  onEditar?: (lead: Lead) => void;
+  onEliminar?: (lead: Lead) => Promise<unknown>;
+  onConvertir?: (lead: Lead) => void;
+  onGuardar: (id: string, patch: UpdateLeadInput) => Promise<unknown>;
 }
 
-export function LeadsTable({ leads, onOpen }: LeadsTableProps) {
-  if (leads.length === 0) {
-    return <p className="text-muted-foreground py-10 text-center text-sm">No hay leads que coincidan con el filtro.</p>;
-  }
+export function LeadsTable({ leads, onOpen, onEditar, onEliminar, onConvertir, onGuardar }: LeadsTableProps) {
+  const [aBorrar, setABorrar] = React.useState<Lead | null>(null);
+  const [borrando, setBorrando] = React.useState(false);
+
+  const columns = React.useMemo(
+    () =>
+      construirColumnasLeads({
+        onVer: onOpen,
+        // Sin formulario de edición propio, «Editar» abre la ficha del lead, que
+        // es donde se edita el resto. Prometer un formulario que no existe sería
+        // peor que reutilizar el que sí.
+        onEditar: onEditar ?? onOpen,
+        onEliminar: setABorrar,
+        onConvertir,
+        onGuardar,
+      }),
+    [onOpen, onEditar, onConvertir, onGuardar],
+  );
+
+  const table = useDataTableInstance({
+    data: leads,
+    columns,
+    persistKey: "leads",
+    enableColumnResizing: true,
+    getRowId: (row) => row.id,
+    defaultPageSize: 25,
+  });
+
+  const confirmarBorrado = async () => {
+    if (!aBorrar || !onEliminar) return;
+    setBorrando(true);
+    try {
+      await onEliminar(aBorrar);
+      toast.success(`Lead «${aBorrar.name}» eliminado`);
+      setABorrar(null);
+    } catch (error) {
+      toast.error("No se pudo eliminar el lead", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setBorrando(false);
+    }
+  };
 
   return (
-    <div className="overflow-hidden rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Contacto</TableHead>
-            <TableHead>Origen</TableHead>
-            <TableHead>Interés</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>Objeción</TableHead>
-            <TableHead className="text-right">Alta</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {leads.map((lead) => (
-            <TableRow key={lead.id} className="cursor-pointer" onClick={() => onOpen(lead)}>
-              <TableCell className="font-medium">
-                <span className="flex items-center gap-1.5">
-                  {lead.name}
-                  {lead.is_customer &&
-                    (lead.converted_user_id ? (
-                      // Auditoría julio, "ficha del cliente accesible desde más
-                      // sitios": antes solo se llegaba a la ficha abriendo el
-                      // panel lateral del lead. stopPropagation porque la fila
-                      // entera también abre ese panel al hacer click.
-                      <Link
-                        href={`/dashboard/alumnos/${lead.converted_user_id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        title="Ver ficha del cliente"
-                      >
-                        <BadgeCheck className="size-4 shrink-0 text-green-600 hover:text-green-700" />
-                      </Link>
-                    ) : (
-                      <BadgeCheck className="size-4 shrink-0 text-green-600" aria-label="Ya es cliente" />
-                    ))}
-                </span>
-              </TableCell>
-              <TableCell>
-                <div className="text-muted-foreground flex flex-col gap-0.5 text-xs">
-                  {lead.email && (
-                    <span className="flex items-center gap-1.5">
-                      <Mail className="size-3" />
-                      {lead.email}
-                    </span>
-                  )}
-                  {lead.phone && (
-                    <span className="flex items-center gap-1.5">
-                      <Phone className="size-3" />
-                      {lead.phone}
-                    </span>
-                  )}
-                  {!lead.email && !lead.phone && <span>—</span>}
-                </div>
-              </TableCell>
-              <TableCell>
-                <LeadSourceBadge source={lead.source} />
-              </TableCell>
-              <TableCell className="text-muted-foreground text-sm">{lead.interest ?? "—"}</TableCell>
-              <TableCell>
-                <LeadStateBadge state={lead.state} />
-              </TableCell>
-              <TableCell>
-                {lead.objection ? (
-                  <LeadObjectionBadge objection={lead.objection} />
-                ) : (
-                  <span className="text-muted-foreground text-xs">—</span>
-                )}
-              </TableCell>
-              <TableCell className="text-muted-foreground text-right text-xs">
-                {new Date(lead.intake_date).toLocaleDateString("es-ES")}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-end">
+        <DataTableViewOptions table={table} />
+      </div>
+
+      <div className="overflow-hidden rounded-md border">
+        <DataTable table={table} columns={columns} enableColumnResize enableColumnReorder />
+      </div>
+
+      <DataTablePagination table={table} />
+
+      {/* «Eliminar» dice QUÉ se borra por su nombre (norma, punto 4): en una
+          tabla de 25 filas con menús idénticos, un «¿seguro?» a secas no permite
+          comprobar que el menú abierto era el de la fila que se creía. */}
+      <AlertDialog open={!!aBorrar} onOpenChange={(abierto) => !abierto && setABorrar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar el lead «{aBorrar?.name}»?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se borra el lead con sus notas y su historial, y no se puede deshacer. Si ya es cliente, su cuenta no se
+              toca.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={borrando}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmarBorrado();
+              }}
+              disabled={borrando}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {borrando ? "Eliminando…" : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

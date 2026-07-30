@@ -16,6 +16,7 @@ import {
 } from "@tanstack/react-table";
 
 import { getCurrentUser } from "@/lib/auth/auth-utils";
+import { ANCHURA_MINIMA, ANCHURA_POR_DEFECTO } from "@/lib/formato-de-tablas";
 
 type UseDataTableInstanceProps<TData, TValue> = {
   data: TData[];
@@ -107,6 +108,15 @@ export function useDataTableInstance<TData, TValue>({
     columns,
     columnResizeMode: "onChange",
     enableColumnResizing,
+    // SIN anchura mínima (norma «formato de tablas», punto 1). TanStack usa
+    // minSize 20 por defecto y eso impedía estrechar más allá de ahí, que era
+    // justo lo que molestaba. Se deja en 1 y no en 0: con 0 el navegador colapsa
+    // la celda a nada y la manija de arrastre deja de poder cogerse, así que la
+    // columna quedaría inrecuperable.
+    defaultColumn: {
+      minSize: ANCHURA_MINIMA,
+      size: ANCHURA_POR_DEFECTO,
+    },
     state: {
       sorting,
       columnVisibility,

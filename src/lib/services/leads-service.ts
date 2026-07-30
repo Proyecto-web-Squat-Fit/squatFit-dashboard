@@ -192,14 +192,35 @@ export interface Lead {
    * sobre este valor. Los datos de ejemplo aún distinguen setter/closer.
    */
   assigned?: string;
-  /** Setter asignado — solo datos de ejemplo (backend colapsa en `assigned`). */
-  setter?: string;
-  /** Closer asignado — solo datos de ejemplo (backend colapsa en `assigned`). */
-  closer?: string;
+  /**
+   * Columna F del Sheet, «Setter»: quién agenda. Desde el 30-jul es una columna
+   * REAL del backend con lista cerrada (antes solo existía en los datos de
+   * ejemplo y el backend lo colapsaba todo en `assigned`).
+   */
+  setter?: string | null;
+  /** Columna H del Sheet, «Closer»: quién hace la llamada. También real desde el 30-jul. */
+  closer?: string | null;
   /** Valor estimado de la oportunidad en € (Bloque 1.1; suma por columna). */
   opportunity_value?: number;
   /** Motivo de pérdida (Bloque 1.3; se pide al mover a «Perdido»). */
   lost_reason?: LeadLostReason;
+  /**
+   * Columnas comerciales del Sheet (backend 30-jul, revisión 00346). Las listas
+   * de valores están en `@/lib/opciones-crm` y son espejo de las `LEAD_*` del
+   * DTO del backend.
+   */
+  /** Columna E, «Seguimiento»: cuándo toca el siguiente toque. */
+  follow_up?: string | null;
+  /**
+   * Columna I, «Resultado»: en qué acabó la llamada. Puede traer texto libre de
+   * antes de que hubiera desplegable, así que no se tipa como unión cerrada.
+   */
+  call_result?: string | null;
+  /**
+   * Columna M, «Origen» FINO («YouTube-Maria»). Distinto de `source`, que es el
+   * grueso y manda en el filtro.
+   */
+  origin_detail?: string | null;
   /** Etiquetas libres (Bloque 1.4; caliente, VIP…). Siempre array. */
   tags: string[];
   notes: LeadNote[];
@@ -238,6 +259,16 @@ export interface UpdateLeadInput {
   lost_reason?: LeadLostReason | null;
   /** Etiquetas: sustituyen a las existentes (Bloque 1.4). */
   tags?: string[];
+  /**
+   * Columnas comerciales del Sheet. `null` limpia el valor (el backend traduce
+   * cadena vacía y null a NULL). Los nombres son los del backend, sin sufijo,
+   * porque viajan tal cual en el PUT.
+   */
+  follow_up?: string | null;
+  closer?: string | null;
+  setter?: string | null;
+  call_result?: string | null;
+  origin_detail?: string | null;
 }
 
 /**
@@ -404,6 +435,12 @@ function normalizeLead(raw: any): Lead {
     assigned: assigned || undefined,
     setter: raw.setter ?? raw.setter_name ?? undefined,
     closer: raw.closer ?? raw.closer_name ?? undefined,
+    // Columnas comerciales del Sheet (backend 30-jul). `?? null` y no
+    // `?? undefined` porque la celda distingue «sin asignar» (null) de «la API no
+    // devolvió el campo», y con undefined las dos cosas se verían igual.
+    follow_up: raw.follow_up ?? null,
+    call_result: raw.call_result ?? null,
+    origin_detail: raw.origin_detail ?? null,
     // Pipeline v3 (Bloque 1): tolerante a backends que aún no los devuelven.
     opportunity_value:
       raw?.opportunity_value != null && !Number.isNaN(Number(raw.opportunity_value))
@@ -949,7 +986,22 @@ export class LeadsService {
       ...(v3 && patch.opportunity_value !== undefined ? { opportunity_value: patch.opportunity_value } : {}),
       ...(v3 && patch.lost_reason !== undefined ? { lost_reason: patch.lost_reason } : {}),
       ...(v3 && patch.tags !== undefined ? { tags: patch.tags } : {}),
+      // Columnas comerciales del Sheet (backend 30-jul, revisión 00346). Van sin
+      // flag porque ya están desplegadas y validadas con `@IsIn`. `null` limpia
+      // el valor; el backend traduce null y cadena vacía a NULL.
+      ...(patch.follow_up !== undefined ? { follow_up: patch.follow_up } : {}),
+      ...(patch.closer !== undefined ? { closer: patch.closer } : {}),
+      ...(patch.setter !== undefined ? { setter: patch.setter } : {}),
+      ...(patch.call_result !== undefined ? { call_result: patch.call_result } : {}),
+      ...(patch.origin_detail !== undefined ? { origin_detail: patch.origin_detail } : {}),
     };
+    // Un PUT con el cuerpo vacío no cambia nada pero devuelve 200, así que la
+    // celda se quedaría enseñando el valor nuevo como si se hubiera guardado.
+    // Pasó de verdad al añadir estas cinco columnas: estaban en el tipo pero no
+    // aquí, y el cambio se perdía sin un solo error.
+    if (Object.keys(body).length === 0) {
+      throw new Error("No hay nada que guardar en este lead (campo no soportado por el backend).");
+    }
     const raw = await this.request<any>(`/api/v1/admin-panel/leads/${id}`, {
       method: "PUT",
       headers: this.authHeaders(),
@@ -1091,7 +1143,10 @@ export class LeadsService {
 
 // ─── Export CSV (repesca → campañas de recuperación) ─────────────────────────
 
-function csvCell(value: string | undefined): string {
+// Acepta `null` además de `undefined` porque las columnas comerciales que llegan
+// del backend (setter, closer, follow_up…) vienen a null cuando están sin
+// asignar, y en el CSV eso es una celda vacía como cualquier otra.
+function csvCell(value: string | null | undefined): string {
   const v = value ?? "";
   return /[",;\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
