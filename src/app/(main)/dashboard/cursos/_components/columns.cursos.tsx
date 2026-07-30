@@ -92,7 +92,10 @@ export const cursosColumns: ColumnDef<Curso>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Curso" />,
-    meta: { label: "Nombre del curso" },
+    // Obligatoria salvo para admin: es la columna que identifica la fila. Sin
+    // ella la tabla es una lista de instructores y niveles sin decir de qué
+    // curso se habla, y quien la oculte por error creerá que se ha roto.
+    meta: { label: "Nombre del curso", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
     cell: ({ row }) => (
       <div className="flex flex-col">
         <span className="font-medium">{row.original.name}</span>

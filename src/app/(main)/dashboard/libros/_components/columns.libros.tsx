@@ -64,7 +64,7 @@ export const librosColumns: ColumnDef<Libro>[] = [
   },
   {
     accessorKey: "title",
-    meta: { label: "Título" },
+    meta: { label: "Título", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Título del Libro" />,
     cell: ({ row }) => (
       <div className="flex flex-col">

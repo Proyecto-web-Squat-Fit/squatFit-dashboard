@@ -173,7 +173,8 @@ export function PedidosTable() {
       },
       {
         id: "customer",
-        meta: { label: "Nombre y email" },
+        // Obligatorias salvo para admin: de quién es el pedido y cuál es.
+        meta: { label: "Nombre y email", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
         accessorFn: (p) => `${p.customerName} ${p.customerEmail}`,
         header: "Nombre, Email",
         size: 220,
@@ -187,7 +188,7 @@ export function PedidosTable() {
       },
       {
         id: "idFecha",
-        meta: { label: "ID y fecha" },
+        meta: { label: "ID y fecha", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
         accessorFn: (p) => p.createdAt,
         header: "ID, Fecha",
         size: 150,

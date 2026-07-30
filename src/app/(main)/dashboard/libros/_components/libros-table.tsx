@@ -87,6 +87,9 @@ export function LibrosTable() {
   const table = useDataTableInstance({
     data: libros,
     columns,
+    // Faltaba: era la única de las cinco tablas sin clave, así que su vista no
+    // se guardaba ni en local ni en el servidor y se perdía en cada recarga.
+    persistKey: "libros",
     enableColumnResizing: true,
     getRowId: (row) => row.id,
     state: {
