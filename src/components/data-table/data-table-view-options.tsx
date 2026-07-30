@@ -36,6 +36,22 @@ interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
 }
 
+/**
+ * Rellena el orden de las columnas de datos dejando en su sitio las que esta
+ * lista no enseña (la casilla de selección y la de acciones).
+ *
+ * Hace falta porque TanStack manda AL FINAL toda columna que no aparezca en
+ * `columnOrder`: al reordenar aquí se guardaban solo las de datos y la casilla
+ * de selección saltaba al extremo derecho, entre la última columna y las
+ * acciones. Se reconstruye el orden completo usando la lista real de columnas
+ * como plantilla y metiendo el orden nuevo en los huecos de las de datos.
+ */
+function ordenCompleto<TData>(table: Table<TData>, ordenDatos: string[]): string[] {
+  const enOrden = new Set(ordenDatos);
+  let i = 0;
+  return table.getAllLeafColumns().map((c) => (enOrden.has(c.id) ? ordenDatos[i++] : c.id));
+}
+
 export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
   const rol = useStaffRole();
   const [arrastrando, setArrastrando] = React.useState<string | null>(null);
@@ -53,7 +69,7 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
 
   const soltar = (destino: string) => {
     if (!arrastrando) return;
-    table.setColumnOrder(moverColumna(idsCompletos, arrastrando, destino));
+    table.setColumnOrder(ordenCompleto(table, moverColumna(idsCompletos, arrastrando, destino)));
     setArrastrando(null);
     setEncima(null);
   };
