@@ -4,7 +4,7 @@ import * as React from "react";
 
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { Table } from "@tanstack/react-table";
-import { Check, GripVertical, Lock, RotateCcw, Settings2 } from "lucide-react";
+import { Check, GripVertical, Lock, RotateCcw, Save, Settings2, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,8 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useStaffRole } from "@/hooks/use-staff-role";
-import { moverColumna, puedeOcultar, type MetaColumna } from "@/lib/formato-de-tablas";
+import { useVistaDeTabla } from "@/hooks/use-vista-de-tabla";
+import { moverColumna, puedeGuardarParaElEquipo, puedeOcultar, type MetaColumna } from "@/lib/formato-de-tablas";
 import { cn } from "@/lib/utils";
 
 /**
@@ -57,11 +58,8 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
     setEncima(null);
   };
 
-  const restablecer = () => {
-    table.setColumnOrder([]);
-    table.resetColumnVisibility();
-    table.resetColumnSizing();
-  };
+  const vista = useVistaDeTabla(table as unknown as Table<unknown>);
+  const admin = puedeGuardarParaElEquipo(rol);
 
   return (
     <DropdownMenu>
@@ -138,13 +136,49 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
         </div>
 
         <DropdownMenuSeparator />
+
+        {/* Qué vista se está aplicando. Sin esto, quien abra el panel en otro
+            ordenador y lo vea distinto no sabría si es cosa suya o del admin. */}
+        <p className="text-muted-foreground px-2 pt-1 pb-1.5 text-xs">
+          {vista.aplicando === "yo" && "Estás viendo tu vista."}
+          {vista.aplicando === "equipo" && "Estás viendo la vista del equipo."}
+          {vista.aplicando === "defecto" && "Columnas por defecto."}
+        </p>
+
         <button
           type="button"
-          onClick={restablecer}
-          className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
+          disabled={vista.guardando}
+          onClick={() => void vista.guardar("yo")}
+          className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm disabled:opacity-50"
+        >
+          <Save className="size-3.5" />
+          Guardar para mí
+        </button>
+
+        {/* Solo el admin fija la del equipo. Al resto NO se le enseña
+            deshabilitada sino que no se le enseña: una columna obligatoria hay
+            que explicarla porque la está buscando, pero una acción que nunca va
+            a poder usar solo estorba. */}
+        {admin && (
+          <button
+            type="button"
+            disabled={vista.guardando}
+            onClick={() => void vista.guardar("equipo")}
+            className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm disabled:opacity-50"
+          >
+            <Users className="size-3.5" />
+            Guardar para todo el equipo
+          </button>
+        )}
+
+        <button
+          type="button"
+          disabled={vista.guardando}
+          onClick={() => void vista.restablecer()}
+          className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm disabled:opacity-50"
         >
           <RotateCcw className="size-3.5" />
-          Restablecer vista
+          {vista.hayVistaDeEquipo ? "Volver a la del equipo" : "Restablecer vista"}
         </button>
       </DropdownMenuContent>
     </DropdownMenu>

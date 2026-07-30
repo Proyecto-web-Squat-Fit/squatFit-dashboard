@@ -117,6 +117,10 @@ export function useDataTableInstance<TData, TValue>({
       minSize: ANCHURA_MINIMA,
       size: ANCHURA_POR_DEFECTO,
     },
+    // `persistKey` viaja en la meta de la tabla para que la lista de «Vista»
+    // sepa qué vista está guardando sin tener que pasárselo por props desde los
+    // seis sitios que ya montan una tabla.
+    meta: { persistKey },
     state: {
       sorting,
       columnVisibility,
