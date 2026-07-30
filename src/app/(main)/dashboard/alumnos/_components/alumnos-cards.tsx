@@ -36,7 +36,7 @@ export function AlumnosCards() {
     <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="sqf-metric-card @container/card">
         <CardHeader>
-          <CardDescription>Alumnos Totales</CardDescription>
+          <CardDescription>Clientes Totales</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.total}</CardTitle>
           <CardAction>
             <Badge variant="outline">
@@ -55,7 +55,7 @@ export function AlumnosCards() {
 
       <Card className="sqf-metric-card @container/card">
         <CardHeader>
-          <CardDescription>Alumnos Activos</CardDescription>
+          <CardDescription>Clientes Activos</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{stats.activos}</CardTitle>
           <CardAction>
             <Badge variant="outline" className="sqf-badge-green">

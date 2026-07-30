@@ -119,8 +119,12 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
   },
   {
     accessorKey: "fullName",
-    meta: { label: "Alumno", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Alumno" />,
+    // «Cliente» y no «Alumno»: en esta tabla están los tres segmentos —Alumno
+    // (cursos), Miembro (programa) y Lector (libro de recetas)— más Suscrito y
+    // Cocinilla. Llamarla «Alumno» daba a entender que solo salían los de
+    // cursos. El segmento concreto sigue diciéndose en su propia columna.
+    meta: { label: "Cliente", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
     cell: ({ row }) => {
       const initials = getInitials(row.original.firstName, row.original.lastName);
       return (
@@ -203,7 +207,7 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(alumno.id)}>
-              Copiar ID del alumno
+              Copiar ID del cliente
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handlers.onViewProfile?.(alumno)}>

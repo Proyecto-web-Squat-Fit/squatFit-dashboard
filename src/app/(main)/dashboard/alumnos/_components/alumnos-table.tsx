@@ -130,7 +130,7 @@ export function AlumnosTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gestión de Alumnos</CardTitle>
+        <CardTitle>Gestión de Clientes</CardTitle>
         <CardDescription>Administra la base de alumnos registrados en la plataforma</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
