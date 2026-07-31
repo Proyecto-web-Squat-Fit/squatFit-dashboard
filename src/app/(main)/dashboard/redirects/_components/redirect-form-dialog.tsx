@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,22 +33,36 @@ interface FormState {
 const EMPTY_FORM: FormState = { slug: "", target_url: "", active: true };
 
 /**
+ * Un enlace corto solo cumple su función si es corto de compartir a mano
+ * (WhatsApp, bio de Instagram, oral por telefono...). 60 caracteres da
+ * margen de sobra para algo descriptivo («black-friday-2026-espana») sin
+ * dejar de ser "corto"; si se supera, se recorta y se avisa en el formulario.
+ */
+const MAX_SLUG_LENGTH = 60;
+
+/** Forma final aceptada: minúsculas/dígitos en bloques separados por un único guion, sin guion en los extremos. */
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
  * Genera un slug válido para URL a partir de lo que escriba el admin:
- * sin acentos/diacríticos, en minúsculas, espacios y símbolos → guion,
- * sin barras ni guiones sobrantes en los extremos. El backend no valida
- * esto (DTO sin regex de slug), así que la barrera útil está aquí: sin
- * esto, un admin podría guardar «año nuevo!» y el enlace corto quedaría
- * roto (espacios/símbolos no son válidos en una ruta).
+ * minúsculas, sin acentos/diacríticos, espacios y símbolos → guion (colapsando
+ * los repetidos), sin guiones ni barras sobrantes en los extremos, recortado
+ * a MAX_SLUG_LENGTH. El backend no valida esto (DTO sin regex de slug), así
+ * que la barrera útil está aquí: sin esto, un admin podría guardar
+ * «año nuevo!» y el enlace corto quedaría roto (espacios/símbolos no son
+ * válidos en una ruta).
  */
 function slugify(value: string): string {
   return value
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // quita los diacriticos (a con acento -> a, n con tilde -> n, etc.)
-    .toLowerCase()
     .trim()
-    .replace(/^\/+|\/+$/g, "") // barras en los extremos, igual que antes
-    .replace(/[^a-z0-9]+/g, "-") // cualquier tramo no alfanumérico → un solo guion
-    .replace(/^-+|-+$/g, ""); // sin guion sobrante al principio/final
+    .replace(/^\/+|\/+$/g, "") // barras en los extremos
+    .replace(/[^a-z0-9]+/g, "-") // cualquier tramo no alfanumérico (espacios, símbolos, separadores) → un solo guion
+    .replace(/^-+|-+$/g, "") // sin guion sobrante al principio/final
+    .slice(0, MAX_SLUG_LENGTH)
+    .replace(/-+$/g, ""); // el recorte a MAX_SLUG_LENGTH puede dejar un guion colgando al final
 }
 
 export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFormDialogProps) {
@@ -68,11 +82,28 @@ export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFor
     }
   }, [open, redirect]);
 
+  // El slug real que se va a guardar es siempre `slugify(form.slug)`, no lo
+  // que hay literal en el input (que solo se normaliza al salir del campo):
+  // este valor es el que se enseña en vivo en la previsualización y el que
+  // decide si se puede guardar, para no guardar nunca algo distinto de lo
+  // que el admin está viendo.
+  const normalizedSlug = useMemo(() => slugify(form.slug), [form.slug]);
+  const slugTyped = form.slug.trim().length > 0;
+  const slugValid = normalizedSlug.length > 0 && SLUG_PATTERN.test(normalizedSlug);
+  const slugTruncated = slugTyped && form.slug.trim().length > MAX_SLUG_LENGTH;
+  const slugError =
+    slugTyped && !slugValid
+      ? "El slug queda vacío al quitar espacios, acentos y símbolos: escribe alguna letra o número."
+      : null;
+  const slugNotice = !slugError && slugTruncated ? `Se guardará recortado a ${MAX_SLUG_LENGTH} caracteres.` : null;
+  const targetTyped = form.target_url.trim().length > 0;
+  const canSubmit = slugValid && targetTyped && !isPending;
+
   const handleSubmit = async () => {
-    const slug = slugify(form.slug);
+    const slug = normalizedSlug;
     const target = form.target_url.trim();
     if (!slug) {
-      setError("El slug es obligatorio.");
+      setError("El slug es obligatorio y debe tener alguna letra o número (sin espacios, acentos ni símbolos).");
       return;
     }
     if (!target) {
@@ -120,14 +151,17 @@ export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFor
               // Al salir del campo se normaliza a un slug válido (sin acentos/espacios/
               // símbolos) para que lo que se ve ya sea lo que se va a guardar, y el
               // admin pueda seguir editándolo si quiere ajustarlo a mano.
-              onBlur={() => setForm((f) => ({ ...f, slug: slugify(f.slug) }))}
+              onBlur={() => setForm((f) => ({ ...f, slug: normalizedSlug }))}
+              aria-invalid={slugTyped && !slugValid}
               disabled={isPending}
             />
-            {form.slug.trim() && (
-              <p className="text-muted-foreground text-xs">
-                /r/{slugify(form.slug) || <span className="italic">slug</span>}
+            {slugTyped && (
+              <p className={slugValid ? "text-muted-foreground text-xs" : "text-destructive text-xs"}>
+                /r/{normalizedSlug || <span className="italic">slug</span>}
               </p>
             )}
+            {slugError && <p className="text-destructive text-xs">{slugError}</p>}
+            {slugNotice && <p className="text-muted-foreground text-xs">{slugNotice}</p>}
           </div>
 
           <div className="grid gap-2">
@@ -145,7 +179,7 @@ export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFor
             <div className="flex flex-col gap-0.5">
               <Label htmlFor="active">Activo</Label>
               <p className="text-muted-foreground text-xs">
-                Si se desactiva, <code>/r/{slugify(form.slug) || "…"}</code> deja de redirigir (404).
+                Si se desactiva, <code>/r/{normalizedSlug || "…"}</code> deja de redirigir (404).
               </p>
             </div>
             <Switch
@@ -163,7 +197,7 @@ export function RedirectFormDialog({ open, onOpenChange, redirect }: RedirectFor
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             Cancelar
           </Button>
-          <Button onClick={() => void handleSubmit()} disabled={isPending}>
+          <Button onClick={() => void handleSubmit()} disabled={!canSubmit}>
             {isPending ? "Guardando…" : isEditing ? "Guardar cambios" : "Crear redirección"}
           </Button>
         </DialogFooter>
