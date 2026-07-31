@@ -19,18 +19,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EditablePill } from "@/components/ui/editable-pill";
 import { Input } from "@/components/ui/input";
 import { useCursos, useDeleteCurso, useToggleCursoStatus, useUpdateCurso } from "@/hooks/use-cursos";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { exportCSV, exportPDF, exportXLSX, type ExportColumn } from "@/lib/export/table-export";
-
-import { EditablePill } from "@/components/ui/editable-pill";
 
 import { CursoActions } from "./columns-actions";
 import { cursosColumns } from "./columns.cursos";
 import { CreateCursoModal } from "./create-curso-modal";
 import { DeleteCursoDialog } from "./delete-curso-dialog";
 import { EditCursoModal } from "./edit-curso-modal";
+import { FreeSampleStatusCell } from "./free-sample-status-cell";
 import { Curso } from "./schema";
 import { UploadVideoModal } from "./upload-video-modal";
 
@@ -135,6 +135,22 @@ export function CursosTable() {
 
     return [
       ...base,
+      {
+        id: "muestra_gratuita",
+        // Sin `accessorFn` con dato real: el valor vive en `GET
+        // course/detail/:id`, que esta fila NO tiene precargado (solo lo
+        // trae `FreeSampleStatusCell` con su propia query) — por eso no se
+        // puede ordenar por esta columna. Se deja un `accessorFn` fijo
+        // igualmente para que la columna SÍ aparezca en «Vista» (ocultar y
+        // reordenar): el filtro de esa lista exige que exista, y esto es
+        // información real de la fila, no un hueco de acciones.
+        accessorFn: () => "",
+        size: 150,
+        meta: { label: "Muestra gratuita" },
+        header: () => "Muestra gratuita",
+        enableSorting: false,
+        cell: ({ row }) => <FreeSampleStatusCell cursoId={row.original.id} />,
+      },
       {
         id: "actions",
         size: 130,
