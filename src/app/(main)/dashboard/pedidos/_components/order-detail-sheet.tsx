@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { Mail, User, CheckCircle2, Undo2, ExternalLink, Package, MapPin, Loader2 } from "lucide-react";
+import { Mail, User, CheckCircle2, Undo2, ExternalLink, Package, MapPin, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useSendOrderEmail, useUpdateOrderPayment, useUpdateOrderStatus } from "@/hooks/use-orders";
+import {
+  useGenerateInvoice,
+  useOrderInvoice,
+  useSendOrderEmail,
+  useUpdateOrderPayment,
+  useUpdateOrderStatus,
+} from "@/hooks/use-orders";
 import {
   MANUAL_PAYMENT_METHODS,
   PAYMENT_METHOD_LABEL,
@@ -53,6 +59,8 @@ export function OrderDetailSheet({ order, open, onOpenChange, onRefund }: OrderD
   const updateStatus = useUpdateOrderStatus();
   const updatePayment = useUpdateOrderPayment();
   const sendEmail = useSendOrderEmail();
+  const invoice = useOrderInvoice(order?.id);
+  const generateInvoice = useGenerateInvoice();
 
   if (!order) return null;
 
@@ -234,6 +242,46 @@ export function OrderDetailSheet({ order, open, onOpenChange, onRefund }: OrderD
               {sendEmail.isPending ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
               Enviar email de estado
             </Button>
+            {/*
+              Factura: la emite el backend con numeración de serie (SQF-<año>-NNNN).
+              Emitir y descargar son dos pasos a propósito: emitir gasta un número
+              de la serie, y así el enlace de descarga es un <a> de verdad (nada de
+              window.open tras un await, que el navegador bloquea).
+            */}
+            {invoice.isLoading ? (
+              <Button variant="outline" className="gap-2" disabled>
+                <Loader2 className="size-4 animate-spin" /> Factura…
+              </Button>
+            ) : invoice.data ? (
+              <Button asChild variant="outline" className="gap-2">
+                <a href={invoice.data.pdfUrl} target="_blank" rel="noopener noreferrer">
+                  <FileText className="size-4" /> Factura {invoice.data.invoiceNumber}
+                  <ExternalLink className="size-3" />
+                </a>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() =>
+                  generateInvoice.mutate(
+                    { orderId: order.id },
+                    {
+                      onSuccess: (inv) => toast.success(`Factura ${inv.invoiceNumber} emitida`),
+                      onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+                    },
+                  )
+                }
+                disabled={generateInvoice.isPending}
+              >
+                {generateInvoice.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <FileText className="size-4" />
+                )}
+                Emitir factura
+              </Button>
+            )}
             {canRefund && (
               <Button variant="outline" className="gap-2 text-rose-700" onClick={() => onRefund(order)}>
                 <Undo2 className="size-4" /> Reembolsar

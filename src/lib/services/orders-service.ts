@@ -14,6 +14,8 @@ const REQUEST_TIMEOUT = 12000;
 //   • PUT    /api/v1/admin-panel/orders/:id/payment { payment_method }   (pagos manuales)
 //   • POST   /api/v1/admin-panel/orders/:id/email   { status? }          (email por estado)
 //   • POST   /api/v1/admin-panel/orders/:id/refund  { reason, note?, amount_cents? }
+//   • GET    /api/v1/admin-panel/orders/:id/invoice                      (404 si no hay)
+//   • POST   /api/v1/admin-panel/orders/:id/invoice[?regenerate=true]    (emite; idempotente)
 //
 // El checkout/webhook de Stripe (y los pedidos de CATÁLOGO de Fase 12) pueblan
 // `orders`/`order_items` con `payment_method` (instrumento real) y `origin`
@@ -131,6 +133,43 @@ export interface OrdersListResult {
 export interface OrdersQuery {
   status?: OrderStatus | "all";
   search?: string;
+}
+
+// ─── Factura del pedido ──────────────────────────────────────────────────────
+// La factura la emite el backend (pdfkit → GCS), con numeración de serie anual
+// SQF-<año>-NNNN, perfil de facturación y desglose de IVA, y la persiste en la
+// tabla `invoices`. El back office NO genera facturas: solo pide la que hay o
+// manda emitirla. `pdfUrl` es una URL firmada y caduca, así que se pide en el
+// momento de descargar y no se guarda.
+export interface OrderInvoice {
+  invoiceNumber: string;
+  orderId: string;
+  total: number;
+  currency: string;
+  issuedAt: string;
+  pdfUrl: string;
+}
+
+/** Respuesta `InvoiceResult` del backend (contrato cerrado, no hace falta sanear). */
+interface InvoiceApi {
+  invoice_number: string;
+  order_id: string;
+  total_amount: number | string;
+  /** Puede faltar en pedidos antiguos anteriores a la columna. */
+  currency: string | null;
+  issued_at: string;
+  pdf_url: string;
+}
+
+function normalizeInvoice(raw: InvoiceApi): OrderInvoice {
+  return {
+    invoiceNumber: raw.invoice_number,
+    orderId: raw.order_id,
+    total: toNumber(raw.total_amount),
+    currency: (raw.currency ?? "eur").toLowerCase(),
+    issuedAt: raw.issued_at,
+    pdfUrl: raw.pdf_url,
+  };
 }
 
 export interface RefundOrderPayload {
@@ -379,6 +418,42 @@ export class OrdersService {
       throw new Error(payload.message ?? payload.error ?? `Error ${res.status} al procesar el reembolso`);
     }
     return res.json().catch(() => ({ message: "Reembolso procesado" }));
+  }
+
+  // ─── Factura ──────────────────────────────────────────────────────────────
+
+  /** Factura ya emitida del pedido; `null` si todavía no tiene ninguna. */
+  static async getInvoice(orderId: string): Promise<OrderInvoice | null> {
+    const res = await fetch(`${API_BASE_URL}/api/v1/admin-panel/orders/${orderId}/invoice`, {
+      headers: this.authHeaders(),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+    });
+    if (res.status === 401) {
+      handleUnauthorized();
+      throw new Error("Sesión caducada");
+    }
+    // 404 = el pedido aún no tiene factura: no es un error de la vista.
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message ?? `Error ${res.status}`);
+    }
+    return normalizeInvoice((await res.json()) as InvoiceApi);
+  }
+
+  /**
+   * Emite la factura del pedido y devuelve la URL firmada del PDF. Es
+   * idempotente: si ya existe devuelve la misma sin gastar otro número de
+   * serie. Devuelve 409 si el cliente ejerció el derecho al olvido (sus datos
+   * fiscales ya no existen y la factura no se puede emitir ni rehacer).
+   */
+  static async generateInvoice(orderId: string): Promise<OrderInvoice> {
+    const data = await this.request<InvoiceApi>(`/api/v1/admin-panel/orders/${orderId}/invoice`, {
+      method: "POST",
+      headers: this.authHeaders(),
+      body: "{}",
+    });
+    return normalizeInvoice(data);
   }
 
   // ─── Envío ────────────────────────────────────────────────────────────────

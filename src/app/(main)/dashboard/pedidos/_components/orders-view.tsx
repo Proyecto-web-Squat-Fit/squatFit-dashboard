@@ -2,35 +2,43 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import Link from "next/link";
-
-import { Search, Eye, User, CheckCircle2, Mail, Undo2, Loader2 } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandTabs } from "@/components/brand-tabs";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { FilterChips } from "@/components/filter-chips";
 import { RefundOrderDialog } from "@/components/modals/refund-order-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { useEncargados } from "@/hooks/use-encargados";
-import { useOrders, useSendOrderEmail, useUpdateOrderStatus } from "@/hooks/use-orders";
+import { useOrders, useSendOrderEmail, useUpdateOrderPayment, useUpdateOrderStatus } from "@/hooks/use-orders";
 import { useCatalogProducts } from "@/hooks/use-products-catalog";
+import { exportCSV, exportPDF, exportXLSX, type ExportColumn } from "@/lib/export/table-export";
 import {
   ORDER_STATUS_META,
+  PAYMENT_METHOD_LABEL,
   formatOrderPrice,
   itemsSummary,
-  relativeDate,
   type Order,
   type OrderItem,
   type OrderStatus,
 } from "@/lib/services/orders-service";
 import { GRANT_TYPES, GRANT_TYPE_LABEL, type Product } from "@/lib/services/products-service";
 
+import { construirColumnasPedidos } from "./columns.pedidos";
 import { OrderDetailSheet } from "./order-detail-sheet";
-import { OrderStatusBadge, PaymentBadge } from "./order-status-badge";
 
 /** Debounce local: evita disparar un GET (limit=200) en cada tecla. */
 function useDebounce<T>(value: T, delay: number): T {
@@ -72,6 +80,19 @@ function itemCategory(item: OrderItem, productsById: Map<string, Product>): stri
   return CATEGORY_OTHER;
 }
 
+/** Columnas de la exportación (CSV / Excel / PDF). */
+const EXPORT_COLUMNS: ExportColumn<Order>[] = [
+  { key: "id", label: "Pedido", value: (o) => `#${o.id.slice(0, 8)}` },
+  { key: "customerName", label: "Cliente" },
+  { key: "customerEmail", label: "Email" },
+  { key: "status", label: "Estado", value: (o) => ORDER_STATUS_META[o.status].label },
+  { key: "total", label: "Total", value: (o) => formatOrderPrice(o.total, o.currency) },
+  { key: "paymentMethod", label: "Pago", value: (o) => (o.paymentMethod ? PAYMENT_METHOD_LABEL[o.paymentMethod] : "") },
+  { key: "items", label: "Productos", value: (o) => itemsSummary(o.items) },
+  { key: "origin", label: "Origen", value: (o) => o.origin ?? "" },
+  { key: "createdAt", label: "Fecha", value: (o) => new Date(o.createdAt).toLocaleString("es-ES") },
+];
+
 export function OrdersView() {
   const [tab, setTab] = useState<OrderStatus | "all">("all");
   const [search, setSearch] = useState("");
@@ -85,6 +106,7 @@ export function OrdersView() {
   const debouncedSearch = useDebounce(search, 350);
   const { data, isLoading } = useOrders({ status: tab, search: debouncedSearch });
   const updateStatus = useUpdateOrderStatus();
+  const updatePayment = useUpdateOrderPayment();
   const sendEmail = useSendOrderEmail();
 
   // Catálogo (para resolver la categoría de cada línea) y encargados (staff).
@@ -92,7 +114,7 @@ export function OrdersView() {
   const productsById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const { options: encargadoOptions, matchesUser } = useEncargados();
 
-  const orders = data?.orders ?? [];
+  const orders = useMemo(() => data?.orders ?? [], [data]);
   const counts = data?.counts ?? {};
 
   // El GET /admin-panel/orders (QueryOrdersDTO, forbidNonWhitelisted) SOLO
@@ -123,19 +145,61 @@ export function OrdersView() {
     [counts],
   );
 
-  const openDetail = (order: Order) => {
-    setSelected(order);
-    setDetailOpen(true);
-  };
+  const columns = useMemo(
+    () =>
+      construirColumnasPedidos({
+        onVer: (order) => {
+          setSelected(order);
+          setDetailOpen(true);
+        },
+        onCompletar: (order) =>
+          updateStatus.mutate(
+            { id: order.id, status: "completed" },
+            {
+              onSuccess: () => toast.success("Pedido marcado como completado"),
+              onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+            },
+          ),
+        onEmail: (order) =>
+          sendEmail.mutate(
+            { id: order.id },
+            {
+              onSuccess: (r) => toast.success(r.message || "Email enviado"),
+              onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+            },
+          ),
+        onReembolsar: setRefundOrder,
+        // `mutateAsync` y no `mutate`: la celda editable necesita que la promesa
+        // lance para volver al valor anterior si el servidor rechaza el cambio.
+        onCambiarEstado: (order, status) => updateStatus.mutateAsync({ id: order.id, status }),
+        onCambiarPago: (order, method) => updatePayment.mutateAsync({ id: order.id, method }),
+        completando: (id) => updateStatus.isPending && updateStatus.variables?.id === id,
+        enviandoEmail: (id) => sendEmail.isPending && sendEmail.variables?.id === id,
+      }),
+    [updateStatus, updatePayment, sendEmail],
+  );
 
-  const markCompleted = (order: Order) =>
-    updateStatus.mutate(
-      { id: order.id, status: "completed" },
-      {
-        onSuccess: () => toast.success("Pedido marcado como completado"),
-        onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
-      },
-    );
+  const table = useDataTableInstance({
+    data: visibleOrders,
+    columns,
+    persistKey: "pedidos",
+    enableColumnResizing: true,
+    getRowId: (row) => row.id,
+    // 20 y no 25: el selector de «Filas por página» solo ofrece 10/20/30/40/50 y
+    // con un valor que no está en la lista sale en blanco.
+    defaultPageSize: 20,
+  });
+
+  const seleccionados = table.getSelectedRowModel().rows.map((r) => r.original);
+
+  const exportar = (fmt: "csv" | "xlsx" | "pdf") => {
+    // Lo seleccionado si hay algo marcado; si no, todo lo que se está viendo.
+    const filas = seleccionados.length ? seleccionados : visibleOrders;
+    const nombre = `pedidos-${filas.length}`;
+    if (fmt === "csv") exportCSV(nombre, EXPORT_COLUMNS, filas);
+    else if (fmt === "xlsx") void exportXLSX(nombre, EXPORT_COLUMNS, filas);
+    else void exportPDF(nombre, EXPORT_COLUMNS, filas, "Pedidos");
+  };
 
   return (
     <div className="@container/main flex flex-col gap-5">
@@ -156,6 +220,21 @@ export function OrdersView() {
             className="pl-8"
           />
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 gap-1">
+              <Download className="size-4" />
+              Exportar
+              {seleccionados.length > 0 && ` (${seleccionados.length})`}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => exportar("csv")}>CSV</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportar("xlsx")}>Excel (XLSX)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportar("pdf")}>PDF</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DataTableViewOptions table={table} />
       </div>
 
       {/* Pastillas multi-selección: varias categorías/encargados a la vez; «Todos» limpia. */}
@@ -179,136 +258,17 @@ export function OrdersView() {
         </div>
       ) : (
         <Card>
-          <CardContent className="pt-6">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-[#EBEAF2]/60 hover:bg-[#EBEAF2]/60 dark:bg-[#363C98]/25 dark:hover:bg-[#363C98]/25">
-                    <TableHead className="text-[#363C98] dark:text-[#b9bce8]">Cliente</TableHead>
-                    <TableHead className="text-[#363C98] dark:text-[#b9bce8]">Pedido</TableHead>
-                    <TableHead className="text-[#363C98] dark:text-[#b9bce8]">Productos</TableHead>
-                    <TableHead className="text-[#363C98] dark:text-[#b9bce8]">Origen</TableHead>
-                    <TableHead className="text-[#363C98] dark:text-[#b9bce8]">Pago</TableHead>
-                    <TableHead className="text-[#363C98] dark:text-[#b9bce8]">Estado</TableHead>
-                    <TableHead className="text-[#363C98] dark:text-[#b9bce8]">Total</TableHead>
-                    <TableHead className="text-right text-[#363C98] dark:text-[#b9bce8]">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visibleOrders.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
-                        No hay pedidos en esta vista.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    visibleOrders.map((o) => {
-                      const struck = o.status === "refunded" || o.status === "cancelled";
-                      const canComplete = o.status === "pending" || o.status === "processing" || o.status === "shipped";
-                      // Estado por fila: solo la fila mutada muestra spinner / se deshabilita.
-                      const isCompleting = updateStatus.isPending && updateStatus.variables?.id === o.id;
-                      const isEmailing = sendEmail.isPending && sendEmail.variables?.id === o.id;
-                      return (
-                        <TableRow key={o.id} className="hover:bg-[#FFEDE0]/40 dark:hover:bg-[#FF690B]/10">
-                          <TableCell>
-                            <p className="font-medium">{o.customerName}</p>
-                            <p className="text-muted-foreground text-xs">{o.customerEmail}</p>
-                          </TableCell>
-                          <TableCell>
-                            <button
-                              className="text-[#FF690B] hover:underline"
-                              onClick={() => openDetail(o)}
-                              title="Ver pedido"
-                            >
-                              #{o.id.slice(0, 8)}
-                            </button>
-                            <p className="text-muted-foreground text-xs">{relativeDate(o.createdAt)}</p>
-                          </TableCell>
-                          <TableCell
-                            className="text-muted-foreground max-w-[220px] truncate text-sm"
-                            title={itemsSummary(o.items)}
-                          >
-                            {itemsSummary(o.items)}
-                          </TableCell>
-                          <TableCell
-                            className="text-muted-foreground max-w-[140px] truncate text-xs"
-                            title={o.origin ?? ""}
-                          >
-                            {o.origin ?? "—"}
-                          </TableCell>
-                          <TableCell>
-                            <PaymentBadge method={o.paymentMethod} />
-                          </TableCell>
-                          <TableCell>
-                            <OrderStatusBadge status={o.status} />
-                          </TableCell>
-                          <TableCell className={struck ? "text-muted-foreground line-through" : ""}>
-                            {formatOrderPrice(o.total, o.currency)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end gap-0.5">
-                              <Button variant="ghost" size="icon" onClick={() => openDetail(o)} title="Ver pedido">
-                                <Eye className="size-4" />
-                              </Button>
-                              {o.userId && (
-                                <Button asChild variant="ghost" size="icon" title="Ficha del cliente">
-                                  <Link href={`/dashboard/alumnos/${o.userId}`}>
-                                    <User className="size-4" />
-                                  </Link>
-                                </Button>
-                              )}
-                              {canComplete && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => markCompleted(o)}
-                                  disabled={isCompleting}
-                                  title="Marcar como completado"
-                                >
-                                  {isCompleting ? (
-                                    <Loader2 className="size-4 animate-spin" />
-                                  ) : (
-                                    <CheckCircle2 className="size-4 text-green-600" />
-                                  )}
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  sendEmail.mutate(
-                                    { id: o.id },
-                                    {
-                                      onSuccess: (r) => toast.success(r.message || "Email enviado"),
-                                      onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
-                                    },
-                                  )
-                                }
-                                disabled={isEmailing}
-                                title="Enviar email de estado"
-                              >
-                                {isEmailing ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-                              </Button>
-                              {(o.status === "completed" || o.status === "processing" || o.status === "shipped") && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-rose-600"
-                                  onClick={() => setRefundOrder(o)}
-                                  title="Reembolsar"
-                                >
-                                  <Undo2 className="size-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+          <CardContent className="space-y-4 pt-6">
+            {visibleOrders.length === 0 ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">No hay pedidos en esta vista.</p>
+            ) : (
+              <>
+                <div className="overflow-x-auto rounded-lg border">
+                  <DataTable table={table} columns={columns} enableColumnResize enableColumnReorder />
+                </div>
+                <DataTablePagination table={table} />
+              </>
+            )}
           </CardContent>
         </Card>
       )}

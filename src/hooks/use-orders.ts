@@ -12,6 +12,7 @@ import {
 
 const ORDERS_KEY = ["orders"] as const;
 const SHIPMENT_KEY = ["order-shipment"] as const;
+const INVOICE_KEY = ["order-invoice"] as const;
 
 export function useOrders(query?: OrdersQuery) {
   return useQuery({
@@ -40,6 +41,26 @@ export function useUpdateOrderPayment() {
 export function useSendOrderEmail() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status?: OrderStatus }) => OrdersService.sendEmail(id, status),
+  });
+}
+
+// ─── Factura del pedido ──────────────────────────────────────────────────────
+
+/** Factura ya emitida del pedido (`null` si no tiene). Solo consulta, no emite. */
+export function useOrderInvoice(orderId: string | null | undefined) {
+  return useQuery({
+    queryKey: [...INVOICE_KEY, orderId],
+    queryFn: () => OrdersService.getInvoice(orderId!),
+    enabled: Boolean(orderId),
+    staleTime: 60_000,
+  });
+}
+
+export function useGenerateInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId }: { orderId: string }) => OrdersService.generateInvoice(orderId),
+    onSuccess: (_data, { orderId }) => queryClient.invalidateQueries({ queryKey: [...INVOICE_KEY, orderId] }),
   });
 }
 
