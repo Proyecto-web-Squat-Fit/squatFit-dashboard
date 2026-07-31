@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useSearchParams } from "next/navigation";
 
@@ -29,15 +29,33 @@ import { useAuth } from "@/contexts/auth-context";
  * tiene el candado de Packs porque no hay nada que solo un admin deba tocar:
  * es de solo lectura).
  */
+/** Ids de todas las pestañas posibles, admin-only incluidas — para aceptar el
+ * `?tab=` de la URL sin depender todavía del rol (ver comentario más abajo). */
+const ALL_PRODUCTOS_TABS = ["catalogo", "asesoria", "packs"];
+
 export function ProductosView() {
   const params = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
+  // El `tab` de la URL se acepta si es un id conocido de CUALQUIER pestaña,
+  // sin filtrar por `isAdmin` todavía: el rol de `useAuth()` es asíncrono y
+  // en el primer render `user` es `null` (isAdmin = false), así que filtrar
+  // aquí tiraba siempre «packs» aunque quien abriera el enlace SÍ fuera admin
+  // — y como esto es el inicializador de `useState`, solo se ejecuta una vez:
+  // el valor equivocado se quedaba para siempre.
   const requestedTab = params.get("tab");
-  const knownTabs = ["catalogo", "asesoria", ...(isAdmin ? ["packs"] : [])];
-  const initialTab = requestedTab && knownTabs.includes(requestedTab) ? requestedTab : "catalogo";
+  const initialTab = requestedTab && ALL_PRODUCTOS_TABS.includes(requestedTab) ? requestedTab : "catalogo";
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Si la URL pedía «packs» (solo admin) y el rol (ya resuelto) no es admin,
+  // cae a Catálogo. Mientras `loading` es true no se toca `activeTab`, para
+  // no dar un salto visible de pestaña.
+  useEffect(() => {
+    if (!loading && activeTab === "packs" && !isAdmin) {
+      setActiveTab("catalogo");
+    }
+  }, [loading, isAdmin, activeTab]);
 
   const tabs = [
     { id: "catalogo", label: "Catálogo", icon: <Tags className="size-4" /> },

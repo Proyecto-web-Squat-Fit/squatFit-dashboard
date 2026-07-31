@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useSearchParams } from "next/navigation";
 
@@ -37,15 +37,29 @@ const ALL_AJUSTES_TABS: (BrandTab & { adminOnly?: boolean })[] = [
 
 export function AjustesView() {
   const params = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
-  const ajustesTabs = ALL_AJUSTES_TABS.filter((t) => !t.adminOnly || isAdmin);
-  const defaultTab = ajustesTabs[0].id;
-
+  // El `tab` de la URL se acepta si es un id conocido de CUALQUIER pestaña,
+  // sin filtrar por rol todavía: el rol de `useAuth()` es asíncrono y en el
+  // primer render `user` es `null` (isAdmin = false), así que filtrar aquí
+  // tiraba siempre las pestañas admin-only aunque quien abriera el enlace
+  // SÍ fuera admin — y como esto es el inicializador de `useState`, solo se
+  // ejecuta una vez: el valor equivocado se quedaba para siempre.
   const tabParam = params.get("tab");
-  const initialTab = ajustesTabs.some((t) => t.id === tabParam) ? (tabParam as string) : defaultTab;
+  const initialTab = ALL_AJUSTES_TABS.some((t) => t.id === tabParam) ? (tabParam as string) : ALL_AJUSTES_TABS[0].id;
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  const ajustesTabs = ALL_AJUSTES_TABS.filter((t) => !t.adminOnly || isAdmin);
+
+  // Si la URL pedía una pestaña admin-only y el rol (ya resuelto) no es admin,
+  // cae a la primera pestaña visible. Mientras `loading` es true no se toca
+  // `activeTab`, para no dar un salto visible de pestaña.
+  useEffect(() => {
+    if (!loading && activeTab === "redirects" && !isAdmin) {
+      setActiveTab("integraciones");
+    }
+  }, [loading, isAdmin, activeTab]);
 
   return (
     <div className="@container/main flex flex-col gap-4 md:gap-6">
