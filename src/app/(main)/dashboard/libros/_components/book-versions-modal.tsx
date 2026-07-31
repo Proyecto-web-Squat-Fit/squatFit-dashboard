@@ -6,6 +6,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 
 import { DataTable } from "@/components/data-table/data-table";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
@@ -18,6 +19,9 @@ import { DeleteVersionDialog } from "./delete-version-dialog";
 import { EditVersionModal } from "./edit-version-modal";
 import { Libro } from "./schema";
 import { UpdateVersionPdfModal } from "./update-version-pdf-modal";
+
+/** Marco de la zona de contenido: el mismo para el cargando, el vacío y la tabla. */
+const MARCO = "min-h-[200px] flex-1 overflow-auto rounded-lg border";
 
 interface BookVersionsModalProps {
   libro: Libro | null;
@@ -70,7 +74,10 @@ export function BookVersionsModal({ libro, open, onOpenChange }: BookVersionsMod
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden">
+        {/* sm:max-w-3xl y no max-w-3xl: DialogContent trae `sm:max-w-lg` de base y,
+            al ir con prefijo, ganaba a la anchura declarada aquí — el modal salía
+            a 512 px y la barra de paginación no cabía. */}
+        <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Versiones de &quot;{libro?.title ?? ""}&quot;</DialogTitle>
             <DialogDescription>
@@ -85,22 +92,31 @@ export function BookVersionsModal({ libro, open, onOpenChange }: BookVersionsMod
                 Nueva versión
               </Button>
             </div>
-            <div className="min-h-[200px] flex-1 overflow-auto rounded-lg border">
-              {isLoading ? (
+            {isLoading ? (
+              <div className={MARCO}>
                 <div className="flex h-[200px] items-center justify-center">
                   <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
                 </div>
-              ) : versions.length === 0 ? (
+              </div>
+            ) : versions.length === 0 ? (
+              <div className={MARCO}>
                 <div className="text-muted-foreground flex h-[200px] flex-col items-center justify-center gap-2 text-center">
                   <p>No hay versiones. Crea la primera versión para que el libro aparezca en el catálogo.</p>
                   <Button size="sm" onClick={() => setIsCreateOpen(true)}>
                     Nueva versión
                   </Button>
                 </div>
-              ) : (
-                <DataTable table={table} columns={columns} />
-              )}
-            </div>
+              </div>
+            ) : (
+              <>
+                <div className={MARCO}>
+                  <DataTable table={table} columns={columns} />
+                </div>
+                {/* Paginación: la tabla arranca con 5 filas por página, así que sin
+                    esto la sexta versión y siguientes no se podían alcanzar. */}
+                <DataTablePagination table={table} />
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

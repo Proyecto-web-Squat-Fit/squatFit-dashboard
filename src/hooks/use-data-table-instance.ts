@@ -87,10 +87,8 @@ export function useDataTableInstance<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnOrder, setColumnOrder] = React.useState<string[]>(initialPrefs.columnOrder ?? []);
   const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>(initialPrefs.columnSizing ?? {});
-  const [pagination, setPagination] = React.useState({
-    pageIndex: defaultPageIndex ?? 0,
-    pageSize: defaultPageSize ?? 10,
-  });
+  const paginacionInicial = { pageIndex: defaultPageIndex ?? 0, pageSize: defaultPageSize ?? 10 };
+  const [pagination, setPagination] = React.useState(paginacionInicial);
 
   // Guardar en el perfil (localStorage) cuando cambian anchura/orden/visibilidad.
   React.useEffect(() => {
@@ -121,6 +119,10 @@ export function useDataTableInstance<TData, TValue>({
     // sepa qué vista está guardando sin tener que pasárselo por props desde los
     // seis sitios que ya montan una tabla.
     meta: { persistKey },
+    // La paginación va controlada, pero el estado inicial se declara igualmente
+    // para que `table.initialState` conserve el tamaño de página de arranque:
+    // es lo que mira el selector de «Filas por página» para ofrecerlo.
+    initialState: { pagination: paginacionInicial },
     state: {
       sorting,
       columnVisibility,
