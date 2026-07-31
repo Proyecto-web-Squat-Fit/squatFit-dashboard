@@ -128,11 +128,15 @@ export function ClientChatsThread({
   onSearchInputChange,
 }: ClientChatsThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Alto del contenedor justo antes de pedir la página anterior, para poder
-  // mantener el punto de lectura del staff cuando se anteponen mensajes más
-  // antiguos en vez de que la vista salte arriba de golpe.
-  const prevScrollHeightRef = useRef<number | null>(null);
-  const wasLoadingOlderRef = useRef(false);
+  // Ancla para no saltar al anteponer mensajes más antiguos: el mensaje que
+  // estaba arriba del todo justo antes de pedir la página anterior, y la
+  // posición en PANTALLA (viewport) que tenía. NO se usa una resta de
+  // `scrollHeight` antes/después: cuando el contenido cargado hasta ese
+  // momento no llega a desbordar la caja (`scrollHeight` == altura fija de
+  // la caja, no la altura real del contenido — un `<div>` nunca puede medir
+  // menos que su propio alto visible), esa resta infravalora lo añadido y la
+  // vista salta igualmente. Anclar a un elemento concreto es inmune a eso.
+  const anclaRef = useRef<{ id: string; top: number } | null>(null);
 
   const visible = useMemo(
     () => (selectedChatRef === "all" ? messages : messages.filter((m) => m.chat_ref === selectedChatRef)),
@@ -148,8 +152,10 @@ export function ClientChatsThread({
     const el = scrollRef.current;
     if (!el || isFetchingOlder || !hasOlder) return;
     if (el.scrollTop < 150) {
-      prevScrollHeightRef.current = el.scrollHeight;
-      wasLoadingOlderRef.current = true;
+      const primerMensaje = el.querySelector<HTMLElement>("[data-message-id]");
+      anclaRef.current = primerMensaje
+        ? { id: primerMensaje.dataset.messageId ?? "", top: primerMensaje.getBoundingClientRect().top }
+        : null;
       onLoadOlder();
     }
   };
@@ -157,17 +163,41 @@ export function ClientChatsThread({
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    if (wasLoadingOlderRef.current && prevScrollHeightRef.current != null) {
-      // Se acaban de anteponer mensajes más antiguos arriba: se mantiene el
-      // punto de lectura en vez de tirar al staff al principio del hilo.
-      el.scrollTop = el.scrollHeight - prevScrollHeightRef.current;
+    const ancla = anclaRef.current;
+    if (ancla) {
+      // Se acaban de anteponer mensajes más antiguos arriba: se busca ESE
+      // MISMO mensaje (ya más abajo en el DOM, con contenido nuevo encima) y
+      // se corrige el scroll justo lo necesario para que vuelva a quedar en
+      // la misma posición de pantalla que tenía. Se mantiene el punto de
+      // lectura del staff en vez de tirarlo al principio del hilo.
+      //
+      // ⚠️ HALLAZGO ABIERTO (verificación visual con Puppeteer, 31-jul): con
+      // un tramo corto que no llega a desbordar la caja, el salto es un
+      // límite FÍSICO inevitable (`scrollTop` no puede pasar de
+      // `scrollHeight - clientHeight`, así que el hueco vacío de debajo del
+      // último mensaje se "gasta" al crecer el contenido). Pero en pruebas
+      // con un tramo que YA desbordaba la caja de sobra antes de pedir la
+      // página anterior — el caso realista, con el `limit` por defecto del
+      // backend (50) — el salto SIGUE apareciendo (visto con capturas: la
+      // vista aterriza en el principio del hilo, no en el mensaje ancla).
+      // Instrumentando el efecto se vio que `el.scrollTop` valía un número
+      // intermedio raro (≈21) justo antes de aplicar la corrección, en vez
+      // de los 0 esperados — no se ha llegado a la causa. Este bloque queda
+      // MEJOR que el original (ya no asume que el scroll estaba exactamente
+      // en 0 al disparar la carga, y no se cae por el límite físico de
+      // arriba en el caso general), pero la garantía de "sin salto" NO está
+      // verificada de verdad para el caso con overflow real: pendiente de
+      // depurar con más tiempo.
+      const mismoMensaje = el.querySelector<HTMLElement>(`[data-message-id="${ancla.id}"]`);
+      if (mismoMensaje) {
+        el.scrollTop += mismoMensaje.getBoundingClientRect().top - ancla.top;
+      }
     } else {
       // Carga inicial, cambio de chat seleccionado o de búsqueda: aterriza en
       // lo más reciente, como se abre cualquier conversación.
       el.scrollTop = el.scrollHeight;
     }
-    wasLoadingOlderRef.current = false;
-    prevScrollHeightRef.current = null;
+    anclaRef.current = null;
   }, [visible]);
 
   return (
@@ -219,6 +249,14 @@ export function ClientChatsThread({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
+        // `overflow-anchor: none`: Chrome trae ANCLAJE DE SCROLL nativo por
+        // defecto, que también intenta compensar solo al anteponer contenido
+        // arriba del scroll. Se apaga para que SOLO mande el cálculo manual
+        // de más abajo (`useLayoutEffect`) y no se pisen los dos a la vez.
+        // Dicho esto: comprobado con Puppeteer que el salto NO queda resuelto
+        // del todo con varias páginas de mensajes reales — ver el aviso
+        // grande en el `useLayoutEffect` de abajo, es un hallazgo abierto.
+        style={{ overflowAnchor: "none" }}
         className="bg-background/40 flex h-[480px] flex-col gap-1 overflow-y-auto rounded-md border p-3"
       >
         <div className="flex justify-center pb-2">
@@ -244,7 +282,7 @@ export function ClientChatsThread({
             const prev = i === 0 ? undefined : visible.at(i - 1);
             const showDay = !prev || dayKey(prev.sent_at) !== dayKey(m.sent_at);
             return (
-              <div key={m.id}>
+              <div key={m.id} data-message-id={m.id}>
                 {showDay && <DaySeparator iso={m.sent_at} />}
                 <MessageBubble message={m} />
               </div>

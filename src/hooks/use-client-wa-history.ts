@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import {
@@ -59,24 +61,39 @@ export function useClientWaHistory(userId: string, q: string) {
     },
   });
 
-  const pages = query.data?.pages ?? [];
-  // Página más reciente = la primera pedida (sin cursor); las siguientes son
-  // cada vez más antiguas. Se invierte para pintar de arriba (antiguo) a
-  // abajo (reciente), y dentro de cada página el backend ya viene ascendente.
-  const messages: WaMessageItem[] = [...pages].reverse().flatMap((p) => p.messages);
-  const chats = pages[0]?.chats ?? [];
-  const summary = pages[0]?.summary ?? null;
-  const search = pages[0]?.search ?? null;
-  // Queda historial más antiguo si la ÚLTIMA página pedida (la más vieja
-  // cargada hasta ahora) todavía dice `has_more`.
-  const hasOlder = pages.length > 0 ? pages[pages.length - 1].page.has_more : false;
+  const data = query.data;
 
-  return {
-    ...query,
-    messages,
-    chats,
-    summary,
-    search,
-    hasOlder,
-  };
+  // Memoizado sobre `data` (no sobre `query` entero, que cambia de
+  // referencia en CADA render — p. ej. en cuanto `isFetchingNextPage` pasa a
+  // `true`, antes de que la red resuelva). Sin esto, `messages`/`chats` eran
+  // arrays NUEVOS aunque el contenido no hubiera cambiado, y como
+  // `ClientChatsThread` memoiza su `useLayoutEffect` de anti-salto sobre esa
+  // misma referencia, el efecto se disparaba de más en esos renders
+  // intermedios. Es una mejora real y verificada con Puppeteer (antes de
+  // esto el efecto corría con datos a medio cargar); OJO: NO es, por sí
+  // sola, la solución completa al salto de scroll al anteponer mensajes
+  // — sigue habiendo un salto real en pruebas con varias páginas que no se
+  // ha terminado de diagnosticar (ver client-chats-thread.tsx).
+  // Solo lo DERIVADO de `data` se memoiza; el resto de `query` (isLoading,
+  // isFetchingNextPage, error, fetchNextPage...) se toma fresco cada render
+  // — si también fuera parte de este objeto memoizado, quedaría CONGELADO al
+  // valor que tenía la última vez que `data` cambió, y p. ej.
+  // `isFetchingNextPage` nunca llegaría a `true` a ojos del componente.
+  const derivado = useMemo(() => {
+    const pages = data?.pages ?? [];
+    // Página más reciente = la primera pedida (sin cursor); las siguientes
+    // son cada vez más antiguas. Se invierte para pintar de arriba (antiguo)
+    // a abajo (reciente), y dentro de cada página el backend ya viene
+    // ascendente.
+    const messages: WaMessageItem[] = [...pages].reverse().flatMap((p) => p.messages);
+    const chats = pages[0]?.chats ?? [];
+    const summary = pages[0]?.summary ?? null;
+    const search = pages[0]?.search ?? null;
+    // Queda historial más antiguo si la ÚLTIMA página pedida (la más vieja
+    // cargada hasta ahora) todavía dice `has_more`.
+    const hasOlder = pages.length > 0 ? pages[pages.length - 1].page.has_more : false;
+    return { messages, chats, summary, search, hasOlder };
+  }, [data]);
+
+  return { ...query, ...derivado };
 }
