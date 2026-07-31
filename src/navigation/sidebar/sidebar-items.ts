@@ -189,6 +189,7 @@ export const sidebarItems: NavGroup[] = [
         subItems: [
           { title: "Lista de Alimentos", url: "/dashboard/nutri/alimentos", icon: Apple },
           { title: "Banco de Recetas", url: "/dashboard/recetas", icon: ChefHat },
+          { title: "Ranking de recetas", url: "/dashboard/recetas/ranking", icon: TrendingUp },
           { title: "Sustituciones", url: "/dashboard/nutri/sustituciones", icon: ArrowLeftRight },
         ],
       },
