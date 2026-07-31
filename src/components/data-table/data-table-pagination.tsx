@@ -9,12 +9,27 @@ interface DataTablePaginationProps<TData> {
   table: Table<TData>;
 }
 
+const TAMANOS_DE_PAGINA = [10, 20, 30, 40, 50];
+
 export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
+  const pageSize = table.getState().pagination.pageSize;
+  // Alguna tabla arranca con un tamaño fuera de la lista estándar (el modal de
+  // versiones de un libro usa 5). Se añaden el vigente y el de arranque: sin el
+  // primero el selector saldría en blanco, y sin el segundo no habría manera de
+  // volver al tamaño original después de cambiarlo.
+  const tamanos = Array.from(new Set([...TAMANOS_DE_PAGINA, table.initialState.pagination.pageSize, pageSize])).sort(
+    (a, b) => a - b,
+  );
+  // Sin selección de filas (modales), el recuento de seleccionadas no dice nada:
+  // se muestra el total de filas, que sí sitúa al usuario dentro de la paginación.
+  const seleccionable = table.options.enableRowSelection !== false;
+
   return (
     <div className="flex items-center justify-between px-4">
       <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-        {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} fila(s)
-        seleccionada(s).
+        {seleccionable
+          ? `${table.getFilteredSelectedRowModel().rows.length} de ${table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).`
+          : `${table.getFilteredRowModel().rows.length} fila(s).`}
       </div>
       <div className="flex w-full items-center gap-8 lg:w-fit">
         <div className="hidden items-center gap-2 lg:flex">
@@ -22,18 +37,18 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
             Filas por página
           </Label>
           <Select
-            value={`${table.getState().pagination.pageSize}`}
+            value={`${pageSize}`}
             onValueChange={(value) => {
               table.setPageSize(Number(value));
             }}
           >
             <SelectTrigger size="sm" className="w-20" id="rows-per-page">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue placeholder={pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
+              {tamanos.map((tamano) => (
+                <SelectItem key={tamano} value={`${tamano}`}>
+                  {tamano}
                 </SelectItem>
               ))}
             </SelectContent>
