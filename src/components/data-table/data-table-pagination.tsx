@@ -9,7 +9,31 @@ interface DataTablePaginationProps<TData> {
   table: Table<TData>;
 }
 
+/** Tamaños de página que se ofrecen en todas las tablas del back office. */
+const TAMANOS_DE_PAGINA = [10, 20, 30, 40, 50];
+
+/**
+ * Opciones del selector, garantizando que estén el tamaño vigente y el propio
+ * de la tabla.
+ *
+ * El `<Select>` de Radix pinta el disparador vacío cuando su `value` no casa con
+ * ningún `<SelectItem>` —no cae al `placeholder`, que solo sale sin valor—, así
+ * que una tabla con `defaultPageSize` fuera de la lista (Leads pide 25) dejaba
+ * el hueco «Filas por página» en blanco. En vez de recortar el tamaño al de la
+ * lista, se añaden los que use la tabla: cada tabla ve su número y las demás
+ * siguen viendo las cinco opciones de siempre. El tamaño por defecto se cuela
+ * aunque no sea el vigente para que se pueda volver a él tras probar otro.
+ */
+const opcionesPara = (tamanos: (number | undefined)[]): number[] => {
+  const extra = tamanos.filter((t): t is number => typeof t === "number" && !TAMANOS_DE_PAGINA.includes(t));
+  if (extra.length === 0) return TAMANOS_DE_PAGINA;
+  return [...new Set([...TAMANOS_DE_PAGINA, ...extra])].sort((a, b) => a - b);
+};
+
 export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
+  const tamanoDePagina = table.getState().pagination.pageSize;
+  const tamanoPorDefecto = (table.options.meta as { defaultPageSize?: number } | undefined)?.defaultPageSize;
+
   return (
     <div className="flex items-center justify-between px-4">
       <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
@@ -22,16 +46,16 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
             Filas por página
           </Label>
           <Select
-            value={`${table.getState().pagination.pageSize}`}
+            value={`${tamanoDePagina}`}
             onValueChange={(value) => {
               table.setPageSize(Number(value));
             }}
           >
             <SelectTrigger size="sm" className="w-20" id="rows-per-page">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue placeholder={tamanoDePagina} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
+              {opcionesPara([tamanoDePagina, tamanoPorDefecto]).map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>

@@ -119,8 +119,10 @@ export function useDataTableInstance<TData, TValue>({
     },
     // `persistKey` viaja en la meta de la tabla para que la lista de «Vista»
     // sepa qué vista está guardando sin tener que pasárselo por props desde los
-    // seis sitios que ya montan una tabla.
-    meta: { persistKey },
+    // seis sitios que ya montan una tabla. `defaultPageSize` viaja igual para
+    // que el selector de «Filas por página» pueda ofrecer siempre el tamaño
+    // propio de la tabla, incluso después de que el usuario haya elegido otro.
+    meta: { persistKey, defaultPageSize },
     state: {
       sorting,
       columnVisibility,
