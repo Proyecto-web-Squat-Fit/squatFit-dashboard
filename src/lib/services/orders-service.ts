@@ -119,6 +119,14 @@ export interface Order {
   refundNote: string | null;
   shippingAddress: Record<string, unknown> | null;
   stripePaymentIntentId: string | null;
+  // `has_invoice`/`invoice_number` los añade el backend en el PR #87 (SquatFit),
+  // abierto y SIN DESPLEGAR a fecha 31-jul. Contra el API real de hoy el campo
+  // no viene en absoluto, así que `null` significa dos cosas a la vez y a
+  // propósito: "todavía no se sabe" (backend viejo) y también sirve de valor
+  // de partida seguro — nunca se pinta como "sin factura" cuando en realidad
+  // es "no tengo ese dato". Ver `normalizeOrder` más abajo.
+  hasInvoice: boolean | null;
+  invoiceNumber: string | null;
   items: OrderItem[];
   createdAt: string;
   updatedAt: string;
@@ -170,6 +178,32 @@ function normalizeInvoice(raw: InvoiceApi): OrderInvoice {
     issuedAt: raw.issued_at,
     pdfUrl: raw.pdf_url,
   };
+}
+
+/**
+ * Error tipado de `POST/GET …/invoice`: el back office necesita distinguir el
+ * código para explicar el motivo (no un «error» genérico) — 400 = el pedido no
+ * está en un estado facturable; 409 = el titular ejerció el derecho al olvido
+ * y sus datos fiscales ya no existen. `message` YA es la frase completa en
+ * español que arma el backend (`BadRequestException`/`ConflictException`), no
+ * hace falta traducir nada aquí, solo no perder el código para que la vista
+ * elija el tono correcto.
+ */
+export class OrderInvoiceError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "OrderInvoiceError";
+    this.status = status;
+  }
+
+  get isNotFacturable(): boolean {
+    return this.status === 400;
+  }
+
+  get isForgottenRight(): boolean {
+    return this.status === 409;
+  }
 }
 
 export interface RefundOrderPayload {
@@ -305,6 +339,11 @@ export function normalizeOrder(raw: any): Order {
     refundNote: raw.refund_note ?? null,
     shippingAddress: raw.shipping_address ?? null,
     stripePaymentIntentId: raw.stripe_payment_intent_id ?? null,
+    // Tolerante a que el campo no exista todavía (backend sin desplegar): solo
+    // se toma como `true`/`false` de verdad si el backend manda un booleano;
+    // si no viene, `null` ("no lo sabemos"), nunca "false" por defecto.
+    hasInvoice: typeof raw.has_invoice === "boolean" ? raw.has_invoice : null,
+    invoiceNumber: typeof raw.invoice_number === "string" ? raw.invoice_number : null,
     items: Array.isArray(raw.items) ? raw.items : [],
     createdAt: raw.created_at ?? raw.createdAt ?? new Date().toISOString(),
     updatedAt: raw.updated_at ?? raw.updatedAt ?? raw.created_at ?? new Date().toISOString(),
@@ -436,24 +475,40 @@ export class OrdersService {
     if (res.status === 404) return null;
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.message ?? `Error ${res.status}`);
+      throw new OrderInvoiceError(res.status, body.message ?? `Error ${res.status}`);
     }
     return normalizeInvoice((await res.json()) as InvoiceApi);
   }
 
   /**
    * Emite la factura del pedido y devuelve la URL firmada del PDF. Es
-   * idempotente: si ya existe devuelve la misma sin gastar otro número de
-   * serie. Devuelve 409 si el cliente ejerció el derecho al olvido (sus datos
-   * fiscales ya no existen y la factura no se puede emitir ni rehacer).
+   * idempotente por defecto (`regenerate=false`): si ya existe devuelve la
+   * misma sin gastar otro número de serie. `regenerate: true` rehace el PDF
+   * conservando el número — de momento no lo pide ningún botón del back
+   * office, solo se deja cableado en el servicio siguiendo el contrato.
+   *
+   * 400 si el pedido no está en un estado facturable (falta pago confirmado);
+   * 409 si el titular ejerció el derecho al olvido (sus datos fiscales ya no
+   * existen y la factura no se puede emitir ni rehacer). Ambos vienen con
+   * `OrderInvoiceError` para que la vista distinga el motivo.
    */
-  static async generateInvoice(orderId: string): Promise<OrderInvoice> {
-    const data = await this.request<InvoiceApi>(`/api/v1/admin-panel/orders/${orderId}/invoice`, {
+  static async generateInvoice(orderId: string, opts?: { regenerate?: boolean }): Promise<OrderInvoice> {
+    const qs = opts?.regenerate ? "?regenerate=true" : "";
+    const res = await fetch(`${API_BASE_URL}/api/v1/admin-panel/orders/${orderId}/invoice${qs}`, {
       method: "POST",
       headers: this.authHeaders(),
       body: "{}",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT),
     });
-    return normalizeInvoice(data);
+    if (res.status === 401) {
+      handleUnauthorized();
+      throw new Error("Sesión caducada");
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new OrderInvoiceError(res.status, body.message ?? `Error ${res.status} al emitir la factura`);
+    }
+    return normalizeInvoice((await res.json()) as InvoiceApi);
   }
 
   // ─── Envío ────────────────────────────────────────────────────────────────

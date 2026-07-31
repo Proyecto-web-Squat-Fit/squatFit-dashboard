@@ -80,6 +80,26 @@ function itemCategory(item: OrderItem, productsById: Map<string, Product>): stri
   return CATEGORY_OTHER;
 }
 
+// ─── Filtro «Factura» ─────────────────────────────────────────────────────
+// EN CLIENTE, igual que Categoría/Encargado (ver comentario junto a
+// `visibleOrders` más abajo): el GET de pedidos no acepta `has_invoice`
+// todavía en el backend desplegado (PR #87 de SquatFit, abierto y SIN
+// DESPLEGAR a 31-jul) y `QueryOrdersDTO` rechaza parámetros que no conoce
+// (`forbidNonWhitelisted`), así que mandarlo tumbaría el listado ENTERO
+// contra el API real de hoy. Filtrando sobre lo ya cargado no hace falta
+// esperar al despliegue y no hay riesgo de romper nada mientras tanto.
+const INVOICE_FILTER_OPTIONS = [
+  { id: "con", label: "Con factura" },
+  { id: "sin", label: "Sin factura" },
+];
+
+/** `null` (dato no disponible, backend viejo) no coincide con ningún filtro: no se sabe. */
+function matchesInvoiceFilter(order: Order, seleccion: string[]): boolean {
+  if (seleccion.length === 0) return true;
+  if (order.hasInvoice === null) return false;
+  return (order.hasInvoice && seleccion.includes("con")) || (!order.hasInvoice && seleccion.includes("sin"));
+}
+
 /** Columnas de la exportación (CSV / Excel / PDF). */
 const EXPORT_COLUMNS: ExportColumn<Order>[] = [
   { key: "id", label: "Pedido", value: (o) => `#${o.id.slice(0, 8)}` },
@@ -90,6 +110,11 @@ const EXPORT_COLUMNS: ExportColumn<Order>[] = [
   { key: "paymentMethod", label: "Pago", value: (o) => (o.paymentMethod ? PAYMENT_METHOD_LABEL[o.paymentMethod] : "") },
   { key: "items", label: "Productos", value: (o) => itemsSummary(o.items) },
   { key: "origin", label: "Origen", value: (o) => o.origin ?? "" },
+  {
+    key: "invoice",
+    label: "Factura",
+    value: (o) => (o.hasInvoice === null ? "" : o.hasInvoice ? (o.invoiceNumber ?? "Sí") : "No"),
+  },
   { key: "createdAt", label: "Fecha", value: (o) => new Date(o.createdAt).toLocaleString("es-ES") },
 ];
 
@@ -102,6 +127,7 @@ export function OrdersView() {
   // Filtros multi-selección (pastillas). Vacío = «Todos».
   const [categories, setCategories] = useState<string[]>([]);
   const [encargadosSel, setEncargadosSel] = useState<string[]>([]);
+  const [facturaSel, setFacturaSel] = useState<string[]>([]);
 
   const debouncedSearch = useDebounce(search, 350);
   const { data, isLoading } = useOrders({ status: tab, search: debouncedSearch });
@@ -129,8 +155,11 @@ export function OrdersView() {
     if (encargadosSel.length > 0) {
       out = out.filter((o) => matchesUser(o.userId, encargadosSel));
     }
+    if (facturaSel.length > 0) {
+      out = out.filter((o) => matchesInvoiceFilter(o, facturaSel));
+    }
     return out;
-  }, [orders, categories, encargadosSel, productsById, matchesUser]);
+  }, [orders, categories, encargadosSel, facturaSel, productsById, matchesUser]);
 
   // Mantener el pedido abierto sincronizado con los datos frescos.
   const openOrder = selected ? (orders.find((o) => o.id === selected.id) ?? selected) : null;
@@ -246,6 +275,7 @@ export function OrdersView() {
           selected={encargadosSel}
           onChange={setEncargadosSel}
         />
+        <FilterChips label="Factura" options={INVOICE_FILTER_OPTIONS} selected={facturaSel} onChange={setFacturaSel} />
       </div>
 
       <BrandTabs tabs={tabs} active={tab} onChange={(id) => setTab(id as OrderStatus | "all")} />

@@ -24,7 +24,7 @@ import {
   type PaymentMethod,
 } from "@/lib/services/orders-service";
 
-import { PaymentBadge } from "./order-status-badge";
+import { InvoiceBadge, PaymentBadge } from "./order-status-badge";
 
 /**
  * COLUMNAS DE PEDIDOS — norma «formato de tablas» (30-jul-2026).
@@ -287,6 +287,16 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
           </span>
         );
       },
+    },
+    {
+      id: "factura",
+      accessorFn: (o) => (o.hasInvoice === true ? (o.invoiceNumber ?? "sí") : o.hasInvoice === false ? "no" : ""),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Factura" />,
+      meta: { label: "Factura" } satisfies MetaColumna,
+      size: 150,
+      cell: ({ row }) => (
+        <InvoiceBadge hasInvoice={row.original.hasInvoice} invoiceNumber={row.original.invoiceNumber} />
+      ),
     },
     {
       id: "acciones",

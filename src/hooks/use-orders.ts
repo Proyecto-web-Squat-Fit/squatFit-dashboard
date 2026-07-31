@@ -59,8 +59,21 @@ export function useOrderInvoice(orderId: string | null | undefined) {
 export function useGenerateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId }: { orderId: string }) => OrdersService.generateInvoice(orderId),
-    onSuccess: (_data, { orderId }) => queryClient.invalidateQueries({ queryKey: [...INVOICE_KEY, orderId] }),
+    mutationFn: ({ orderId, regenerate }: { orderId: string; regenerate?: boolean }) =>
+      OrdersService.generateInvoice(orderId, { regenerate }),
+    // El 400 (estado no facturable) y el 409 (derecho al olvido) son errores
+    // de REGLA DE NEGOCIO, no fallos de red transitorios: si sale hoy,
+    // reintentar en 1s (el `retry: 1` por defecto de mutations en
+    // `query-provider.tsx`) va a dar el MISMO 400/409 sin haber cambiado
+    // nada, y solo consigue que el staff vea el aviso un segundo más tarde.
+    retry: false,
+    onSuccess: (_data, { orderId }) => {
+      queryClient.invalidateQueries({ queryKey: [...INVOICE_KEY, orderId] });
+      // La factura recién emitida cambia `has_invoice`/`invoice_number` de la
+      // fila en el listado (columna + filtro de Factura): sin esto quedaría
+      // desactualizada hasta el siguiente refetch por `staleTime`.
+      queryClient.invalidateQueries({ queryKey: ORDERS_KEY });
+    },
   });
 }
 

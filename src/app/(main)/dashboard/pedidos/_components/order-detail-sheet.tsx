@@ -19,6 +19,7 @@ import {
 } from "@/hooks/use-orders";
 import {
   MANUAL_PAYMENT_METHODS,
+  OrderInvoiceError,
   PAYMENT_METHOD_LABEL,
   formatOrderPrice,
   formatRefundReason,
@@ -29,6 +30,25 @@ import {
 
 import { OrderShipmentPanel } from "./order-shipment-panel";
 import { OrderStatusBadge, PaymentBadge } from "./order-status-badge";
+
+/**
+ * Mensaje del botón «Emitir factura» según el error. El backend YA manda la
+ * frase completa en español (`OrderInvoiceError.message`); aquí solo se
+ * elige el título y cuánto tiempo se queda en pantalla — los 400/409 son
+ * párrafos explicativos (motivo fiscal/RGPD), no una línea de error normal,
+ * así que se quedan más tiempo que el resto de toasts.
+ */
+function avisarErrorFactura(e: unknown) {
+  if (e instanceof OrderInvoiceError && e.isNotFacturable) {
+    toast.error("Este pedido no se puede facturar todavía", { description: e.message, duration: 12000 });
+    return;
+  }
+  if (e instanceof OrderInvoiceError && e.isForgottenRight) {
+    toast.error("No se puede emitir: derecho al olvido", { description: e.message, duration: 15000 });
+    return;
+  }
+  toast.error(e instanceof Error ? e.message : "No se ha podido emitir la factura");
+}
 
 /** Tipos de línea que se mandan en un paquete (el resto es acceso digital). */
 const PHYSICAL_PRODUCT_TYPES = ["book", "version", "pack", "product"];
@@ -268,7 +288,7 @@ export function OrderDetailSheet({ order, open, onOpenChange, onRefund }: OrderD
                     { orderId: order.id },
                     {
                       onSuccess: (inv) => toast.success(`Factura ${inv.invoiceNumber} emitida`),
-                      onError: (e) => toast.error(e instanceof Error ? e.message : "Error"),
+                      onError: avisarErrorFactura,
                     },
                   )
                 }
