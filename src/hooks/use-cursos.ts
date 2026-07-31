@@ -353,6 +353,49 @@ export function useDeleteCursoVideo() {
 }
 
 /**
+ * Hook para marcar/desmarcar una clase (vídeo) de un curso como muestra
+ * gratuita — mismo endpoint que los metadatos normales
+ * (`PUT course/videos/:id/metadata`, PR #90 de SquatFit), pero como
+ * mutación propia y con `retry: false`: un reintento automático solo
+ * retrasa el aviso de error al staff sin cambiar el resultado (misma
+ * lección que el PR de facturas y el del ranking de recetas).
+ *
+ * Se manda también el título/descripción/prioridad VIGENTES junto con
+ * `is_free_sample`, no solo el flag: no hay garantía de que este PUT sea un
+ * PATCH parcial, así que mandar solo el campo que cambia podría vaciar los
+ * demás en el backend.
+ */
+export function useToggleCursoVideoFreeSample() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { message: string },
+    Error,
+    {
+      videoId: string;
+      courseId: string;
+      nextValue: boolean;
+      title: string;
+      description?: string | null;
+      priority?: number | null;
+    }
+  >({
+    mutationFn: ({ videoId, nextValue, title, description, priority }) =>
+      CursosService.updateCursoVideoMetadata(videoId, {
+        title,
+        description: description ?? undefined,
+        priority: priority ?? undefined,
+        is_free_sample: nextValue,
+      }),
+    retry: false,
+    onSuccess: (_response, { courseId }) => {
+      queryClient.invalidateQueries({ queryKey: cursosKeys.detail(courseId) });
+      queryClient.invalidateQueries({ queryKey: cursosKeys.lists() });
+    },
+  });
+}
+
+/**
  * Hook para actualizar los metadatos de un video de un curso
  * Endpoint: PUT /api/v1/course/videos/{video_id}/metadata
  */

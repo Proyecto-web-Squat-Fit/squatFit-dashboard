@@ -123,6 +123,16 @@ export interface UpdateVideoMetadataDto {
   title?: string;
   description?: string;
   priority?: number;
+  /**
+   * Muestra gratuita de la clase (PR #90 de SquatFit): la primera clase de
+   * cada curso se marca así para que el panel del cliente recién registrado
+   * tenga algo que enseñar en Cursos sin haber comprado nada — decisión de
+   * Hamlet de no regalar el curso entero (eso resolvería solo esa sección),
+   * sino una clase de cada uno. El endpoint YA acepta este campo hoy; lo que
+   * todavía no expone es la LECTURA (`GET course/detail/:id` no devuelve
+   * `video_is_free_sample` hasta que se despliegue el resto del PR #90).
+   */
+  is_free_sample?: boolean;
 }
 
 // ============================================================================

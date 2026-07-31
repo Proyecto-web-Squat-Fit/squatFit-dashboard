@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 
-import { X, FileVideo, Upload, Link2, Trash2, Edit2 } from "lucide-react";
+import { X, FileVideo, Upload, Link2, Trash2, Edit2, Gift, Loader2, CircleAlert } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
+import { toast } from "sonner";
 
 import { CoverImageUpload } from "@/components/cover-image-upload";
 import { InstructorSelect } from "@/components/forms/instructor-select";
@@ -12,6 +13,7 @@ import {
   PRODUCT_DELIVERY_SUPPORTED,
   type ProductDeliveryValue,
 } from "@/components/product-delivery-fields";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +40,7 @@ import { Label } from "@/components/ui/label";
 import { PriceInput } from "@/components/ui/price-input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useDeleteCursoVideo, useUpdateCursoVideoMetadata } from "@/hooks/use-cursos";
+import { useDeleteCursoVideo, useToggleCursoVideoFreeSample, useUpdateCursoVideoMetadata } from "@/hooks/use-cursos";
 
 import { CreateCursoFormValues } from "./create-curso-schema";
 
@@ -55,6 +57,13 @@ interface CreateCursoFormProps {
     video_url: string;
     video_description?: string;
     video_priority?: number;
+    /**
+     * Muestra gratuita (PR #90 de SquatFit): `true`/`false` cuando el
+     * backend ya lo manda, `undefined` si esta instancia todavía no
+     * despliega ese campo — NO tratar `undefined` como `false`, son cosas
+     * distintas («no se sabe» vs «no tiene»).
+     */
+    video_is_free_sample?: boolean;
   }>;
   videoPresentationUrl?: string;
   cursoId?: string;
@@ -92,6 +101,7 @@ export function CreateCursoForm({
   };
   const deleteVideoMutation = useDeleteCursoVideo();
   const updateVideoMetadataMutation = useUpdateCursoVideoMetadata();
+  const freeSampleMutation = useToggleCursoVideoFreeSample();
   const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
   const [videoToEdit, setVideoToEdit] = useState<{
     id: string;
@@ -99,6 +109,48 @@ export function CreateCursoForm({
     description: string;
     priority: number;
   } | null>(null);
+  // Fila con el guardado del flag «muestra gratuita» en vuelo (deshabilita
+  // el switch de esa fila mientras tanto, igual que el ranking de recetas).
+  const [guardandoFreeSample, setGuardandoFreeSample] = useState<Set<string>>(new Set());
+
+  const toggleFreeSample = (
+    video: { video_id: string; video_title: string; video_description?: string; video_priority?: number },
+    next: boolean,
+  ) => {
+    if (!cursoId) return;
+    const verbo = next ? "marcar como muestra gratuita" : "quitar de muestra gratuita";
+    if (!confirm(`¿Seguro que quieres ${verbo} la clase «${video.video_title}»?`)) return;
+    setGuardandoFreeSample((s) => new Set(s).add(video.video_id));
+    freeSampleMutation.mutate(
+      {
+        videoId: video.video_id,
+        courseId: cursoId,
+        nextValue: next,
+        title: video.video_title,
+        description: video.video_description ?? null,
+        priority: video.video_priority ?? null,
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            next
+              ? `«${video.video_title}» ahora es muestra gratuita`
+              : `«${video.video_title}» ya no es muestra gratuita`,
+          );
+        },
+        onError: (e) => {
+          toast.error(e instanceof Error ? e.message : "No se ha podido guardar el cambio");
+        },
+        onSettled: () => {
+          setGuardandoFreeSample((s) => {
+            const n = new Set(s);
+            n.delete(video.video_id);
+            return n;
+          });
+        },
+      },
+    );
+  };
 
   const addVideo = form.watch("add_course_video");
   const videoType = form.watch("course_video_type");
@@ -429,7 +481,48 @@ export function CreateCursoForm({
         {((videoPresentationUrl && videoPresentationUrl.trim() !== "") ||
           (currentVideos && currentVideos.length > 0)) && (
           <div className="border-border/70 bg-background space-y-4 rounded-lg border p-4">
-            <p className="text-muted-foreground text-sm font-medium">Videos cargados en este curso</p>
+            <div>
+              <p className="text-muted-foreground text-sm font-medium">Videos cargados en este curso</p>
+              <p className="text-muted-foreground text-xs">
+                La clase marcada como <Gift className="inline size-3" /> «muestra gratuita» la ve cualquier cliente
+                registrado sin haber comprado el curso.
+              </p>
+            </div>
+
+            {/* Degradación: el backend de esta instancia todavía no manda
+                `video_is_free_sample` (PR #90 de SquatFit, sin desplegar).
+                Se puede MARCAR igual (el PUT ya lo acepta), pero no se puede
+                confirmar el estado hasta que se despliegue la lectura. */}
+            {currentVideos &&
+              currentVideos.length > 0 &&
+              !currentVideos.some((v) => typeof v.video_is_free_sample === "boolean") && (
+                <Alert>
+                  <CircleAlert className="size-4" />
+                  <AlertTitle>Todavía no se puede confirmar qué clase es la muestra gratuita</AlertTitle>
+                  <AlertDescription>
+                    El backend de esta instancia no devuelve <code>video_is_free_sample</code> en el detalle del curso
+                    (PR #90 de SquatFit, abierto y sin desplegar). Puedes marcar una clase con el interruptor de abajo —
+                    el guardado ya funciona —, pero hasta que se despliegue el resto del PR no se verá reflejado aquí.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+            {/* Aviso (no bloqueo) si hay más de una clase marcada: puede ser
+                deliberado, pero que quien lo mire lo sepa. */}
+            {currentVideos && currentVideos.filter((v) => v.video_is_free_sample === true).length > 1 && (
+              <Alert>
+                <CircleAlert className="size-4" />
+                <AlertTitle>
+                  {currentVideos.filter((v) => v.video_is_free_sample === true).length} clases marcadas como muestra
+                  gratuita en este curso
+                </AlertTitle>
+                <AlertDescription>
+                  No está prohibido — puede ser una decisión deliberada —, pero lo habitual es una sola clase de muestra
+                  por curso. Confirma que dar acceso a varias es intencional.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid gap-3">
               {/* Video de presentación */}
               {videoPresentationUrl && videoPresentationUrl.trim() !== "" && (
@@ -468,6 +561,34 @@ export function CreateCursoForm({
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <Badge variant="outline">Prioridad: {video.video_priority ?? 0}</Badge>
+                    {cursoId && (
+                      <div
+                        className="flex items-center gap-1.5"
+                        title={
+                          video.video_is_free_sample === true
+                            ? "Es la muestra gratuita de este curso"
+                            : "Marcar como muestra gratuita"
+                        }
+                      >
+                        {guardandoFreeSample.has(video.video_id) ? (
+                          <Loader2 className="text-muted-foreground size-3.5 animate-spin" />
+                        ) : (
+                          <Gift
+                            className={`size-3.5 ${video.video_is_free_sample === true ? "text-[#FF690B]" : "text-muted-foreground"}`}
+                          />
+                        )}
+                        <Switch
+                          checked={video.video_is_free_sample === true}
+                          disabled={guardandoFreeSample.has(video.video_id) || isLoading}
+                          onCheckedChange={(next) => toggleFreeSample(video, next)}
+                          aria-label={
+                            video.video_is_free_sample === true
+                              ? `Quitar «${video.video_title}» de muestra gratuita`
+                              : `Marcar «${video.video_title}» como muestra gratuita`
+                          }
+                        />
+                      </div>
+                    )}
                     {cursoId && (
                       <div className="flex items-center gap-1">
                         <Button
