@@ -50,6 +50,8 @@ export interface AdminRecipe {
   image_url: string | null;
   created_at: string;
   updated_at: string;
+  /** F5 «muestras gratuitas» (31-jul): visible en detalle completo sin tener el libro. */
+  is_free_sample: boolean;
 }
 
 export interface RecipeInput {
@@ -64,6 +66,48 @@ export interface RecipeInput {
   carbohydrates: number;
   proteins: number;
   fats: number;
+  is_free_sample?: boolean;
+}
+
+// ─── Ranking de recetas por uso real (F5, 31-jul) ───────────────────────────
+// Contrato del PR #90 de SquatFit, ABIERTO Y SIN DESPLEGAR a 31-jul: sirve
+// para elegir las muestras gratuitas por datos en vez de a mano. Vive en un
+// endpoint aparte (`admin-panel/recipes/ranking`), independiente de
+// RECIPES_API_READY (el CRUD de recetas SÍ está desplegado; el ranking no).
+export interface RecipeRankingRow {
+  recipe_id: string;
+  recipe_name: string;
+  is_free_sample: boolean;
+  opens: number;
+  clicks: number;
+  /**
+   * Media de `duration_seconds` de los eventos `read_time`, YA CAPADA a 900s
+   * (15 min) por evento del lado del servidor — un valor alto no es un error.
+   * `null` si no hay ningún `read_time` en el rango (no "0": no confundir
+   * "sin datos" con "se leyó 0 segundos").
+   */
+  avg_read_seconds: number | null;
+}
+
+export interface RecipeRankingParams {
+  /** ISO date/datetime, inclusive (content_events.created_at >= from). */
+  from?: string;
+  /** ISO date/datetime, inclusive (content_events.created_at <= to). */
+  to?: string;
+}
+
+/**
+ * El endpoint del ranking no está desplegado todavía: contra el API real de
+ * hoy responde 404 (ruta que no existe) o 401 (el middleware de permisos no
+ * la reconoce y cierra en falso). Se distingue de un error genérico (500,
+ * red caída) para poder decir «esta función todavía no está disponible» en
+ * vez de un aviso de fallo que invita a reintentar sin sentido.
+ */
+export class RecipeRankingUnavailableError extends Error {
+  constructor() {
+    super("El ranking de recetas todavía no está disponible en este servidor.");
+    this.name = "RecipeRankingUnavailableError";
+  }
 }
 
 // ============================================================================
@@ -128,6 +172,7 @@ function demoRecipes(): AdminRecipe[] {
       proteins: 30,
       fats: 8,
       image_url: null,
+      is_free_sample: false,
       created_at: t,
       updated_at: t,
     },
@@ -156,6 +201,7 @@ function demoRecipes(): AdminRecipe[] {
       proteins: 42,
       fats: 10,
       image_url: null,
+      is_free_sample: false,
       created_at: t,
       updated_at: t,
     },
@@ -178,6 +224,7 @@ function demoRecipes(): AdminRecipe[] {
       proteins: 22,
       fats: 16,
       image_url: null,
+      is_free_sample: false,
       created_at: t,
       updated_at: t,
     },
@@ -228,6 +275,7 @@ export const RecetasAdminService = {
         proteins: input.proteins,
         fats: input.fats,
         image_url: null,
+        is_free_sample: input.is_free_sample ?? false,
         created_at: nowIso(),
         updated_at: nowIso(),
       };
@@ -271,4 +319,66 @@ export const RecetasAdminService = {
     }
     await request(`/api/v1/admin-panel/recipes/${id}`, { method: "DELETE" });
   },
+
+  /**
+   * Ranking de recetas por uso real (F5). Endpoint APARTE del resto del
+   * CRUD (que sí está en prod) — este todavía no. Va con `fetch` a mano y no
+   * con `request()` porque necesita el CÓDIGO de estado para distinguir
+   * "no desplegado" (404/401) de un fallo de verdad, no solo el mensaje.
+   */
+  async getRanking(params?: RecipeRankingParams): Promise<RecipeRankingRow[]> {
+    const qs = new URLSearchParams();
+    if (params?.from) qs.set("from", params.from);
+    if (params?.to) qs.set("to", params.to);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+
+    const token = getAuthToken();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/api/v1/admin-panel/recipes/ranking${suffix}`, {
+        headers,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (res.status === 404 || res.status === 401) {
+      throw new RecipeRankingUnavailableError();
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { message?: string }).message ?? `Error ${res.status} al cargar el ranking`);
+    }
+    return (await res.json()) as RecipeRankingRow[];
+  },
 };
+
+/**
+ * Un `RecipeInput` completo a partir de una receta ya cargada, para el PUT
+ * (reemplaza todo el recurso — no hay PATCH). Se usa al marcar/desmarcar
+ * «gratuita» desde el ranking: ese endpoint solo conoce id/nombre/flag, así
+ * que hace falta la receta completa (ingredientes, pasos, materiales…) para
+ * no perderlos al guardar.
+ */
+export function recipeToInput(recipe: AdminRecipe, overrides?: Partial<RecipeInput>): RecipeInput {
+  return {
+    name: recipe.name,
+    description: recipe.description,
+    duration_minutes: recipe.duration_minutes,
+    servings: recipe.servings,
+    ingredients: recipe.ingredients,
+    preparation_steps: recipe.preparation_steps,
+    materials: recipe.materials,
+    kcal: recipe.kcal,
+    carbohydrates: recipe.carbohydrates,
+    proteins: recipe.proteins,
+    fats: recipe.fats,
+    is_free_sample: recipe.is_free_sample,
+    ...overrides,
+  };
+}
