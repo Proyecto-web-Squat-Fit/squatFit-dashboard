@@ -137,6 +137,29 @@ export function ClientChatsThread({
   // menos que su propio alto visible), esa resta infravalora lo añadido y la
   // vista salta igualmente. Anclar a un elemento concreto es inmune a eso.
   const anclaRef = useRef<{ id: string; top: number } | null>(null);
+  // CAUSA RAÍZ del salto (verificación visual con Puppeteer + instrumentación,
+  // 31-jul): el `useLayoutEffect` de abajo posiciona el scroll a mano en dos
+  // sitios — `el.scrollTop = el.scrollHeight` en la carga inicial, y
+  // `el.scrollTop += …` al corregir tras anteponer mensajes — y AMBAS
+  // asignaciones disparan un evento `scroll` nativo del navegador igual que
+  // si lo hiciera el staff con la rueda. `handleScroll` no distinguía el
+  // origen: si esa posición programática caía por debajo del umbral de
+  // 150px (pasa siempre que el tramo recién cargado apenas desborda la caja
+  // — el mensaje más reciente queda a solo un puñado de píxeles del tope),
+  // se disparaba OTRO `onLoadOlder()` sin que el staff hubiera tocado nada
+  // todavía. Con eso, la paginación se consume sola nada más montar el
+  // componente (visto con capturas + `performance.now()`: el `onLoadOlder`
+  // automático saltaba a los ~25ms del primer render, muy antes de que el
+  // script de verificación llegara a mover la rueda). Cuando el staff SÍ
+  // hace scroll de verdad, ya no queda página anterior que pedir — la vista
+  // simplemente sigue el gesto hasta el principio real del hilo, sin ningún
+  // punto de control intermedio, y eso es justo lo que se percibía como «la
+  // vista salta al principio». La corrección de ancla en sí siempre calculó
+  // bien (por eso no se veía en el propio cálculo): el fallo estaba en QUÉ
+  // eventos de scroll cuentan como «el staff pidió más». Arreglo: solo se
+  // atiende `handleScroll` tras un gesto real (rueda/táctil/arrastre de la
+  // barra) sobre la caja, nunca antes de que `userGestureRef` se active.
+  const userGestureRef = useRef(false);
 
   const visible = useMemo(
     () => (selectedChatRef === "all" ? messages : messages.filter((m) => m.chat_ref === selectedChatRef)),
@@ -145,12 +168,19 @@ export function ClientChatsThread({
 
   const searchTooShort = searchInput.trim().length > 0 && searchInput.trim().length < WA_HISTORY_MIN_SEARCH;
 
+  const marcarGestoReal = () => {
+    userGestureRef.current = true;
+  };
+
   // Scroll hacia arriba = mensajes más antiguos, como cualquier app de chat.
   // Umbral generoso (150px) para pedir la página anterior un poco antes de
-  // que el staff llegue al tope y note el salto.
+  // que el staff llegue al tope y note el salto. Solo cuenta si el propio
+  // staff generó el scroll (ver `userGestureRef` arriba): un scroll disparado
+  // por nuestras propias asignaciones de `scrollTop` (carga inicial o
+  // corrección de ancla) NO debe poder pedir otra página por su cuenta.
   const handleScroll = () => {
     const el = scrollRef.current;
-    if (!el || isFetchingOlder || !hasOlder) return;
+    if (!el || !userGestureRef.current || isFetchingOlder || !hasOlder) return;
     if (el.scrollTop < 150) {
       const primerMensaje = el.querySelector<HTMLElement>("[data-message-id]");
       anclaRef.current = primerMensaje
@@ -171,23 +201,12 @@ export function ClientChatsThread({
       // la misma posición de pantalla que tenía. Se mantiene el punto de
       // lectura del staff en vez de tirarlo al principio del hilo.
       //
-      // ⚠️ HALLAZGO ABIERTO (verificación visual con Puppeteer, 31-jul): con
-      // un tramo corto que no llega a desbordar la caja, el salto es un
-      // límite FÍSICO inevitable (`scrollTop` no puede pasar de
-      // `scrollHeight - clientHeight`, así que el hueco vacío de debajo del
-      // último mensaje se "gasta" al crecer el contenido). Pero en pruebas
-      // con un tramo que YA desbordaba la caja de sobra antes de pedir la
-      // página anterior — el caso realista, con el `limit` por defecto del
-      // backend (50) — el salto SIGUE apareciendo (visto con capturas: la
-      // vista aterriza en el principio del hilo, no en el mensaje ancla).
-      // Instrumentando el efecto se vio que `el.scrollTop` valía un número
-      // intermedio raro (≈21) justo antes de aplicar la corrección, en vez
-      // de los 0 esperados — no se ha llegado a la causa. Este bloque queda
-      // MEJOR que el original (ya no asume que el scroll estaba exactamente
-      // en 0 al disparar la carga, y no se cae por el límite físico de
-      // arriba en el caso general), pero la garantía de "sin salto" NO está
-      // verificada de verdad para el caso con overflow real: pendiente de
-      // depurar con más tiempo.
+      // Esta asignación de `el.scrollTop` de aquí abajo TAMBIÉN dispara un
+      // evento `scroll` nativo (como la de la rama `else`); `handleScroll`
+      // solo actúa sobre gestos reales del staff (`userGestureRef`), así que
+      // esta corrección no puede disparar por su cuenta otra carga — ver la
+      // nota larga junto a `userGestureRef` más arriba con la causa raíz del
+      // salto que arregla esto.
       const mismoMensaje = el.querySelector<HTMLElement>(`[data-message-id="${ancla.id}"]`);
       if (mismoMensaje) {
         el.scrollTop += mismoMensaje.getBoundingClientRect().top - ancla.top;
@@ -249,13 +268,18 @@ export function ClientChatsThread({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
+        // Marcan que el SIGUIENTE `scroll` (y cualquier otro después) viene
+        // de verdad del staff, no de una asignación nuestra de `scrollTop`
+        // (ver `userGestureRef` arriba). `onWheel`/`onTouchStart` cubren
+        // ratón y táctil; `onPointerDown` cubre además arrastrar la propia
+        // barra de scroll con el ratón.
+        onWheel={marcarGestoReal}
+        onTouchStart={marcarGestoReal}
+        onPointerDown={marcarGestoReal}
         // `overflow-anchor: none`: Chrome trae ANCLAJE DE SCROLL nativo por
         // defecto, que también intenta compensar solo al anteponer contenido
         // arriba del scroll. Se apaga para que SOLO mande el cálculo manual
         // de más abajo (`useLayoutEffect`) y no se pisen los dos a la vez.
-        // Dicho esto: comprobado con Puppeteer que el salto NO queda resuelto
-        // del todo con varias páginas de mensajes reales — ver el aviso
-        // grande en el `useLayoutEffect` de abajo, es un hallazgo abierto.
         style={{ overflowAnchor: "none" }}
         className="bg-background/40 flex h-[480px] flex-col gap-1 overflow-y-auto rounded-md border p-3"
       >
