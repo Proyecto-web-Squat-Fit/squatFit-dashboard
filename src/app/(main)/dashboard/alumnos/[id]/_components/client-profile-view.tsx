@@ -40,6 +40,7 @@ import { useStaffRole } from "@/hooks/use-staff-role";
 import { avatarSrc } from "@/lib/avatar";
 import { canGrantProducts, visibleFichaSections } from "@/lib/ficha-visibility";
 
+import { ClientChatsSection } from "./client-chats-section";
 import { ClientProgressSection } from "./client-progress-section";
 import { StaffNotesSection } from "./staff-notes-section";
 
@@ -526,6 +527,9 @@ export function ClientProfileView({ userId }: ClientProfileViewProps) {
 
       {/* Notas de staff */}
       {tab === "notas" && <StaffNotesSection userId={userId} authorRole={role} />}
+
+      {/* Chats — historial de WhatsApp, solo lectura (F3 nº 139) */}
+      {tab === "chats" && <ClientChatsSection userId={userId} />}
 
       {/* Formularios */}
       {tab === "formularios" && (
