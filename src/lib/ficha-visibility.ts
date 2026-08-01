@@ -8,7 +8,17 @@
 // ============================================================================
 
 import type { LucideIcon } from "lucide-react";
-import { ClipboardList, HeartPulse, KeyRound, NotebookPen, ShoppingBag, Target, TrendingUp, User2 } from "lucide-react";
+import {
+  ClipboardList,
+  HeartPulse,
+  KeyRound,
+  MessagesSquare,
+  NotebookPen,
+  ShoppingBag,
+  Target,
+  TrendingUp,
+  User2,
+} from "lucide-react";
 
 /** Roles de staff (espejo de STAFF_ROLES en jwt-utils, sin tocar ese módulo). */
 export type StaffRole = "admin" | "adviser" | "dietitian" | "sales" | "psychologist" | "support_agent";
@@ -20,6 +30,7 @@ export type FichaSectionId =
   | "salud"
   | "objetivos"
   | "progreso"
+  | "chats"
   | "formularios"
   | "notas";
 
@@ -39,6 +50,7 @@ export const FICHA_SECTIONS: FichaSection[] = [
   { id: "compras", label: "Compras", icon: ShoppingBag },
   { id: "formularios", label: "Formularios", icon: ClipboardList },
   { id: "notas", label: "Notas de staff", icon: NotebookPen },
+  { id: "chats", label: "Chats", icon: MessagesSquare },
 ];
 
 const ALL: FichaSectionId[] = FICHA_SECTIONS.map((s) => s.id);
@@ -51,6 +63,12 @@ const ALL: FichaSectionId[] = FICHA_SECTIONS.map((s) => s.id);
  *  • sales — lo comercial: datos, accesos, compras y notas; sin datos de salud.
  *  • psychologist — datos, objetivos, formularios y notas; sin compras ni medidas.
  *  • support_agent — resolución de incidencias: datos, accesos y compras.
+ *
+ * «chats» (historial de WhatsApp, F3 nº 139) solo entra en el `ALL` de admin
+ * a propósito: el permiso `wa-history` del backend hoy es SOLO admin
+ * (migración 20260728170000), así que a cualquier otro rol el backend le
+ * respondería 401 igualmente. Si el permiso se abre a más roles más adelante,
+ * añadir «chats» aquí a los que corresponda.
  */
 export const FICHA_VISIBILITY: Record<StaffRole, FichaSectionId[]> = {
   admin: ALL,
