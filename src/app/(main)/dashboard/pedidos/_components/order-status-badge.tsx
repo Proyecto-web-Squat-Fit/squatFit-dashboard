@@ -1,12 +1,7 @@
 import { FileText } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  ORDER_STATUS_META,
-  PAYMENT_METHOD_LABEL,
-  type OrderStatus,
-  type PaymentMethod,
-} from "@/lib/services/orders-service";
+import { ORDER_STATUS_META, paymentMethodLabel, type OrderStatus } from "@/lib/services/orders-service";
 import { cn } from "@/lib/utils";
 
 export function OrderStatusBadge({ status, className }: { status: OrderStatus; className?: string }) {
@@ -14,11 +9,18 @@ export function OrderStatusBadge({ status, className }: { status: OrderStatus; c
   return <Badge className={cn("font-medium", meta.badge, className)}>{meta.label}</Badge>;
 }
 
-export function PaymentBadge({ method }: { method: PaymentMethod | null }) {
-  if (!method) return <span className="text-muted-foreground text-xs">—</span>;
+/**
+ * Instrumento con el que se cobró el pedido. `method` es cadena libre porque lo
+ * escribe Stripe y su catálogo no es nuestro: `paymentMethodLabel` pone nombre
+ * a los conocidos y enseña tal cual los que no. Lo que NO se hace es
+ * descartarlo, que es lo que dejaba media tabla en «Sin marcar».
+ */
+export function PaymentBadge({ method }: { method: string | null }) {
+  const label = paymentMethodLabel(method);
+  if (!label) return <span className="text-muted-foreground text-xs">—</span>;
   return (
     <Badge variant="outline" className="font-normal">
-      {PAYMENT_METHOD_LABEL[method]}
+      {label}
     </Badge>
   );
 }

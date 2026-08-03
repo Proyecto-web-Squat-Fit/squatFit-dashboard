@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, Pencil, Trash2, Eye, Mail, PackagePlus } from "lucide-react";
 
+import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -134,9 +135,11 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <span className="font-medium">{row.original.fullName}</span>
-            <span className="text-muted-foreground text-xs">{row.original.email}</span>
+          <div className="flex min-w-0 flex-col">
+            <CeldaTexto className="font-medium">{row.original.fullName}</CeldaTexto>
+            <CeldaTexto apagado className="text-xs">
+              {row.original.email}
+            </CeldaTexto>
           </div>
         </div>
       );
@@ -147,7 +150,7 @@ export const getAlumnosColumns = (handlers: ColumnHandlers = {}): ColumnDef<Alum
     accessorKey: "username",
     meta: { label: "Usuario" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" />,
-    cell: ({ row }) => <span className="font-mono text-sm">@{row.original.username}</span>,
+    cell: ({ row }) => <CeldaTexto className="font-mono text-sm">@{row.original.username}</CeldaTexto>,
   },
   {
     accessorKey: "birth",

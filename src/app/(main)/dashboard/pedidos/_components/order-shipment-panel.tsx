@@ -57,7 +57,13 @@ interface ShipmentFormProps {
 
 function ShipmentForm({ orderId, shipment, onDone, onCancel }: ShipmentFormProps) {
   const editing = Boolean(shipment);
-  const [carrier, setCarrier] = useState<ShipmentCarrier>(shipment?.carrier ?? "correos_express");
+  // «Correos» por defecto: es el transportista del contrato. Un envío antiguo
+  // con `correos_express` guardado ya no está entre las opciones, así que cae
+  // aquí — que es lo correcto, porque son el mismo localizador y el mismo
+  // contrato al que se quiere migrar.
+  const [carrier, setCarrier] = useState<ShipmentCarrier>(
+    shipment?.carrier === "otro" ? "otro" : "correos",
+  );
   const [carrierName, setCarrierName] = useState(shipment?.carrierName ?? "");
   const [trackingNumber, setTrackingNumber] = useState(shipment?.trackingNumber ?? "");
   const [shippedAt, setShippedAt] = useState(toLocalInput(shipment?.shippedAt));

@@ -113,6 +113,57 @@ export function moverColumna(orden: string[], desde: string, hasta: string): str
   return copia;
 }
 
+// ─── Texto de una celda ──────────────────────────────────────────────────────
+
+/**
+ * Cómo se comporta el texto largo dentro de una celda: **se ajusta al ancho de
+ * la columna y salta de línea**. Nunca se corta.
+ *
+ * Antes cada celda con texto largo usaba `truncate`, que lo deja en una sola
+ * línea y esconde el resto detrás del borde de la columna. Con anchura
+ * personalizable (que es la norma desde el 30-jul) eso es especialmente malo:
+ * el usuario estrecha una columna y el dato desaparece sin avisar de que hay
+ * más. En «Productos» y «Origen» de Pedidos se veía a diario — «Pack Vol. 1 y
+ * 2» quedaba en «Pack Vol. 1 y…» o directamente cortado a media palabra.
+ *
+ * `break-words` es imprescindible además de `whitespace-normal`: sin él una URL
+ * o un identificador sin espacios no tiene por dónde partirse y vuelve a
+ * desbordar, que es justo lo que se quería evitar.
+ */
+export const CLASE_CELDA_AJUSTADA = "whitespace-normal break-words";
+
+// ─── Importes ────────────────────────────────────────────────────────────────
+
+const SIMBOLO_MONEDA: Record<string, string> = {
+  eur: "€",
+  usd: "$",
+  gbp: "£",
+  mxn: "$",
+  cop: "$",
+  clp: "$",
+  pen: "S/",
+};
+
+/**
+ * Importe de una tabla del back office: **dos decimales separados por un punto**
+ * y el símbolo detrás («49.00 €»).
+ *
+ * El punto es decisión explícita de Hamlet (3-ago-2026). El panel lo tenía de
+ * las tres maneras a la vez: `toFixed(2)` (punto) en Pedidos, `Intl.NumberFormat
+ * ("es-ES")` (coma) en las tarjetas de inicio y en Marketing, y `€` DELANTE del
+ * número en Packs. Tres formatos para la misma cifra obligan a mirar dos veces
+ * cuál es cuál al comparar dos pantallas.
+ *
+ * Una moneda que no esté en la tabla se pinta con su código en mayúsculas
+ * («1200.00 BRL»): es feo, pero es correcto, y mejor que inventarse un símbolo.
+ */
+export function formatearImporte(valor: number | string | null | undefined, moneda = "eur"): string {
+  const n = typeof valor === "number" ? valor : parseFloat(String(valor ?? ""));
+  const cifra = Number.isFinite(n) ? n : 0;
+  const codigo = (moneda || "eur").toLowerCase();
+  return `${cifra.toFixed(2)} ${SIMBOLO_MONEDA[codigo] ?? codigo.toUpperCase()}`;
+}
+
 /**
  * Precedencia al cargar: **vista propia → vista del equipo → columnas por
  * defecto del código**.

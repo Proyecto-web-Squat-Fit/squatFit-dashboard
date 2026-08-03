@@ -76,7 +76,7 @@ const INTEGRACIONES: Integracion[] = [
   },
   {
     id: "correos",
-    nombre: "Correos Express",
+    nombre: "Correos",
     descripcion: "Envíos de libros físicos y seguimiento.",
     icon: Package,
     integradaEl: null,

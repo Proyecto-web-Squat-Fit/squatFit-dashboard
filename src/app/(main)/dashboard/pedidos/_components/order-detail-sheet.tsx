@@ -17,11 +17,11 @@ import {
   useUpdateOrderPayment,
   useUpdateOrderStatus,
 } from "@/hooks/use-orders";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 import {
   MANUAL_PAYMENT_METHODS,
   OrderInvoiceError,
   PAYMENT_METHOD_LABEL,
-  formatOrderPrice,
   formatRefundReason,
   relativeDate,
   type Order,
@@ -136,14 +136,18 @@ export function OrderDetailSheet({ order, open, onOpenChange, onRefund }: OrderD
                     {it.product_name}
                     {it.quantity > 1 && <span className="text-muted-foreground"> ×{it.quantity}</span>}
                   </span>
-                  <span className="text-muted-foreground">{Number(it.unit_price).toFixed(2)}</span>
+                  {/* Con moneda: una línea suelta sin símbolo no dice si son
+                      euros o dólares, y el total de abajo sí lo lleva. */}
+                  <span className="text-muted-foreground tabular-nums">
+                    {formatearImporte(it.unit_price, order.currency)}
+                  </span>
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-between border-t pt-2 text-sm font-semibold">
               <span>Total</span>
               <span className={order.status === "refunded" || order.status === "cancelled" ? "line-through" : ""}>
-                {formatOrderPrice(order.total, order.currency)}
+                {formatearImporte(order.total, order.currency)}
               </span>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { handleUnauthorized } from "@/lib/api-client";
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
 /** Corta peticiones colgadas para que la UI no quede en isLoading para siempre. */
@@ -203,17 +204,10 @@ export function accessLabel(accessMonths: number | null): string {
   return `${accessMonths} meses`;
 }
 
-const CURRENCY_SYMBOL: Record<string, string> = {
-  eur: "€",
-  usd: "$",
-  gbp: "£",
-  mxn: "$",
-  cop: "$",
-  clp: "$",
-  pen: "S/",
-};
-
+/**
+ * Precio del catálogo. Delega en la norma «formato de tablas» para que la misma
+ * cifra se lea igual en Productos, Packs y Pedidos.
+ */
 export function formatPrice(price: number, currency: string): string {
-  const sym = CURRENCY_SYMBOL[currency] ?? currency.toUpperCase();
-  return `${price.toFixed(2)} ${sym}`;
+  return formatearImporte(price, currency);
 }

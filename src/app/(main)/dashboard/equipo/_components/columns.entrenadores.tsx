@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, Pencil, Trash2, Eye, Power, Mail, Phone } from "lucide-react";
 
+import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -116,9 +117,11 @@ export const getEntrenadoresColumns = (handlers: ColumnHandlers = {}): ColumnDef
             {row.original.avatar && <AvatarImage src={row.original.avatar} />}
             <AvatarFallback className="bg-orange-100 font-semibold text-orange-700">{initials}</AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <span className="font-medium">{row.original.fullName}</span>
-            <span className="text-muted-foreground text-xs">{row.original.email}</span>
+          <div className="flex min-w-0 flex-col">
+            <CeldaTexto className="font-medium">{row.original.fullName}</CeldaTexto>
+            <CeldaTexto apagado className="text-xs">
+              {row.original.email}
+            </CeldaTexto>
           </div>
         </div>
       );
@@ -129,16 +132,16 @@ export const getEntrenadoresColumns = (handlers: ColumnHandlers = {}): ColumnDef
     accessorKey: "phone",
     meta: { label: "Teléfono" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" />,
-    cell: ({ row }) => <span className="text-sm">{row.original.phone || "No disponible"}</span>,
+    cell: ({ row }) => <CeldaTexto className="text-sm">{row.original.phone || "No disponible"}</CeldaTexto>,
   },
   {
     accessorKey: "description",
     meta: { label: "Descripción" },
     header: ({ column }) => <DataTableColumnHeader column={column} title="Descripción" />,
     cell: ({ row }) => (
-      <div className="max-w-[300px] truncate">
-        <span className="text-muted-foreground text-sm">{row.original.description || "Sin descripción"}</span>
-      </div>
+      <CeldaTexto apagado className="text-sm">
+        {row.original.description || "Sin descripción"}
+      </CeldaTexto>
     ),
   },
   {

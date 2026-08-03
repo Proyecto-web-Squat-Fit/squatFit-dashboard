@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePacks } from "@/hooks/use-packs";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 
 export function PacksCards() {
   const { data: packs = [], isLoading } = usePacks();
@@ -88,7 +89,7 @@ export function PacksCards() {
         <CardHeader>
           <CardDescription>Precio promedio</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            €{stats.precioPromedio.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatearImporte(stats.precioPromedio, "eur")}
           </CardTitle>
           <CardAction>
             <Badge variant="outline" className="sqf-badge-indigo">
