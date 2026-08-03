@@ -20,6 +20,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * A dónde ir tras entrar: la pantalla de la que te echó el 401 (`?redirect=`)
+ * o el panel.
+ *
+ * Solo se acepta una ruta INTERNA. Un `?redirect=https://otra-cosa` convertiría
+ * el login del back office en un trampolín para mandar a alguien del equipo a
+ * una web ajena que se le parezca — con `//` basta para saltar de dominio, así
+ * que no vale con comprobar la barra inicial.
+ */
+function destinoTrasEntrar(): string {
+  if (typeof window === "undefined") return "/dashboard";
+  const destino = new URLSearchParams(window.location.search).get("redirect");
+  if (!destino || !destino.startsWith("/") || destino.startsWith("//")) return "/dashboard";
+  return destino;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -53,8 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await refreshUser();
       toast.success("Inicio de sesión exitoso");
 
-      // Redirección inmediata sin delays innecesarios
-      router.push("/dashboard");
+      // De vuelta a donde estaba antes de que la sesión se cayera, si el rebote
+      // dejó la pantalla en `?redirect=`. Si no, al panel, como siempre.
+      router.push(destinoTrasEntrar());
     } catch (error) {
       setLoading(false);
       throw error;
