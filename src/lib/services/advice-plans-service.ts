@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // PLANES DE ASESORÍA (tabla `suscription_plan`, así escrita en el backend)
@@ -25,7 +26,6 @@ import { getAuthToken } from "@/lib/auth/auth-utils";
 // ordenado por `name` ASC. La búsqueda y el filtro de estado son 100% cliente.
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
 const REQUEST_TIMEOUT = 12000;
 
 /** Forma EXACTA de la respuesta del backend (AdvicePlanSummary). */

@@ -1,15 +1,9 @@
 "use client";
 
-import { CircleAlert, CircleCheck, HelpCircle } from "lucide-react";
+import { CircleAlert, CircleCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCurso } from "@/hooks/use-cursos";
-
-/** Forma mínima de un vídeo tal como lo devuelve `GET course/detail/:id`. */
-interface VideoConMuestra {
-  video_is_free_sample?: boolean | null;
-}
 
 /**
  * «¿Este curso ya tiene una clase de muestra gratuita?» — de un vistazo,
@@ -24,42 +18,17 @@ interface VideoConMuestra {
  * «cuáles no tienen ninguna todavía» — por eso esto vive en el LISTADO, no
  * solo dentro del editor de cada curso.
  *
- * Usa `useCurso` (GET course/detail/:id), la MISMA query que ya dispara el
- * modal de edición — cacheada 5 min (`staleTime` del hook), así que si el
- * curso se acaba de abrir para editar esto no repite la petición. Se paga
- * con una petición por fila VISIBLE (la tabla pagina a 10 por defecto, así
- * que como mucho 10 en paralelo por página) a cambio de la visión de
- * conjunto que es el objetivo real de esta columna — no existe un
- * endpoint de listado que traiga este dato para todos los cursos a la vez.
+ * ANTES esto llamaba a `useCurso` (GET course/detail/:id) por cada fila
+ * visible, y lo dejaba documentado como compromiso consciente porque no
+ * existía ningún endpoint de listado que trajera el dato. Desde el 3-ago sí
+ * existe: `GET course/all` devuelve `free_sample_count`, así que la columna
+ * ya no cuesta ni una petición — el dato viene en la misma fila.
  */
-export function FreeSampleStatusCell({ cursoId }: { cursoId: string }) {
-  const { data, isLoading, isError } = useCurso(cursoId);
-
-  if (isLoading) {
-    return <span className="text-muted-foreground text-xs">…</span>;
-  }
-
-  if (isError) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="outline" className="text-muted-foreground gap-1 font-normal">
-            <HelpCircle className="size-3" /> Error
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent>No se ha podido comprobar: falló la carga del detalle de este curso.</TooltipContent>
-      </Tooltip>
-    );
-  }
-
-  const videos = (data?.videos ?? []) as VideoConMuestra[];
-
-  // Si NINGÚN vídeo trae el campo (todos `undefined`), es que el backend de
-  // esta instancia todavía no manda `video_is_free_sample` (PR #90 de
-  // SquatFit, sin desplegar) — «no se sabe» es distinto de «no tiene», y no
-  // hay que confundirlos como si de repente ningún curso tuviera muestra.
-  const datoDisponible = videos.some((v) => typeof v.video_is_free_sample === "boolean");
-  if (!datoDisponible) {
+export function FreeSampleStatusCell({ count }: { count?: number }) {
+  // `undefined` = este backend todavía no manda el recuento (instancia vieja).
+  // «No se sabe» es distinto de «no tiene», y no hay que confundirlos como si
+  // de repente ningún curso tuviera muestra.
+  if (typeof count !== "number") {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -68,16 +37,13 @@ export function FreeSampleStatusCell({ cursoId }: { cursoId: string }) {
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
-          El backend de esta instancia todavía no manda si una clase es muestra gratuita (PR #90 de SquatFit, abierto y
-          sin desplegar).
+          El backend de esta instancia todavía no manda cuántas clases son muestra gratuita en el listado de cursos.
         </TooltipContent>
       </Tooltip>
     );
   }
 
-  const n = videos.filter((v) => v.video_is_free_sample === true).length;
-
-  if (n === 0) {
+  if (count === 0) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -90,7 +56,7 @@ export function FreeSampleStatusCell({ cursoId }: { cursoId: string }) {
     );
   }
 
-  if (n === 1) {
+  if (count === 1) {
     return (
       <Badge variant="outline" className="sqf-badge-green gap-1 font-normal">
         <CircleCheck className="size-3" /> 1 clase
@@ -102,11 +68,11 @@ export function FreeSampleStatusCell({ cursoId }: { cursoId: string }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <Badge variant="outline" className="gap-1 border-amber-300 font-normal text-amber-700 dark:text-amber-400">
-          <CircleAlert className="size-3" /> {n} clases
+          <CircleAlert className="size-3" /> {count} clases
         </Badge>
       </TooltipTrigger>
       <TooltipContent>
-        {n} clases marcadas como muestra gratuita en este curso. No está prohibido — puede ser deliberado —, pero
+        {count} clases marcadas como muestra gratuita en este curso. No está prohibido — puede ser deliberado —, pero
         confirma que lo es: lo habitual es una sola por curso.
       </TooltipContent>
     </Tooltip>

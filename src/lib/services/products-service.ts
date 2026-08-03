@@ -1,8 +1,8 @@
 import { handleUnauthorized } from "@/lib/api-client";
 import { getAuthToken } from "@/lib/auth/auth-utils";
 import { formatearImporte } from "@/lib/formato-de-tablas";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
 /** Corta peticiones colgadas para que la UI no quede en isLoading para siempre. */
 const REQUEST_TIMEOUT = 12000;
 

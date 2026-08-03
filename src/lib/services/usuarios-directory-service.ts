@@ -1,11 +1,11 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // Directorio de usuarios (tabla Usuarios del diseño).
 // Endpoint: /api/v1/admin-panel/users-directory
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 15000;
 
 export interface ShippingAddress {

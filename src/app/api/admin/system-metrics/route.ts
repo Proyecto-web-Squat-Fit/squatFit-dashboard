@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAuthTokenFromCookies } from "@/lib/auth/server-utils";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 /**
  * Proxy para GET /api/v1/admin/system-metrics/performance-dashboard

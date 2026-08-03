@@ -5,6 +5,7 @@
  */
 
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 import type { GetTasksParams, TasksResponse } from "./admin-tasks-types";
 
@@ -12,7 +13,6 @@ import type { GetTasksParams, TasksResponse } from "./admin-tasks-types";
 // CONFIGURACIÓN DEL SERVICIO
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
 const REQUEST_TIMEOUT = 10000;
 
 // ============================================================================

@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // PROGRESO DE UN CLIENTE — pestaña «Progreso» de la ficha del alumno
@@ -16,7 +17,6 @@ import { getAuthToken } from "@/lib/auth/auth-utils";
 // despliegue, la llamada devolverá 404 de ruta y la pestaña lo dirá tal cual.
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 15000;
 
 /** Un registro de la Tabla progreso: fecha + peso + el resto de columnas. */
