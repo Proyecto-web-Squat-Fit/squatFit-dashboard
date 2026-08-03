@@ -22,11 +22,17 @@ import type { RecipeRankingRow } from "@/lib/services/recetas-admin-service";
  * el contenido de la receta — eso ya lo hace /dashboard/recetas. El enlace
  * «Editar receta» lleva allí para lo demás.
  *
- * Umbral de «muestra pequeña» del tiempo medio de lectura: el contrato del
- * backend NO devuelve cuántos eventos `read_time` entraron en la media, así
- * que se usa `opens` como proxy razonable (todo `read_time` viene de un
- * `open` previo, así que como mucho hay tantos read_time como opens). Con
- * `opens <= 2` se avisa; no es exacto, pero es la única señal disponible.
+ * Umbral de «muestra pequeña» del tiempo medio de lectura.
+ *
+ * Desde el 3-ago el backend devuelve `read_time_events`: el número REAL de
+ * lecturas que entraron en la media, o sea su denominador. Antes aquí se usaba
+ * `opens` como aproximación —con su límite escrito— y ese proxy SOBREESTIMA:
+ * se puede abrir una receta y cerrarla sin leerla, así que `opens` siempre es
+ * mayor o igual que las lecturas reales y hacía parecer sólida una media que
+ * no lo era.
+ *
+ * Se sigue tolerando que el campo no venga (un API anterior): en ese caso se
+ * cae a `opens` y al texto de antes. Degradar es mejor que romper la pantalla.
  */
 const UMBRAL_MUESTRA_PEQUEÑA = 2;
 
@@ -126,18 +132,29 @@ export function construirColumnasRanking(acciones: AccionesRanking): ColumnDef<R
         if (r.avg_read_seconds == null) {
           return <span className="text-muted-foreground text-sm">Sin datos</span>;
         }
-        const muestraPequeña = r.opens <= UMBRAL_MUESTRA_PEQUEÑA;
+        // Denominador real si el backend lo manda; si no, la aproximación vieja.
+        const lecturas = r.read_time_events;
+        const tieneDato = typeof lecturas === "number";
+        const base = tieneDato ? lecturas : r.opens;
+        const muestraPequeña = base <= UMBRAL_MUESTRA_PEQUEÑA;
         return (
           <div className="flex items-center gap-1.5">
             <Timer className="size-3.5 opacity-60" />
             <span className="tabular-nums">{formatearSegundos(r.avg_read_seconds)}</span>
+            {tieneDato && (
+              <span className="text-muted-foreground text-xs tabular-nums">
+                ({lecturas} {lecturas === 1 ? "lectura" : "lecturas"})
+              </span>
+            )}
             {muestraPequeña && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <AlertTriangle className="size-3.5 shrink-0 text-amber-600" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  Basada en muy pocas aperturas ({r.opens}): todavía no es una media fiable para decidir con ella.
+                  {tieneDato
+                    ? `Media calculada sobre ${base} ${base === 1 ? "lectura" : "lecturas"}: todavía no es fiable para decidir con ella.`
+                    : `Basada en muy pocas aperturas (${base}): todavía no es una media fiable para decidir con ella.`}
                 </TooltipContent>
               </Tooltip>
             )}
