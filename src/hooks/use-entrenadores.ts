@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Entrenador } from "@/app/(main)/dashboard/equipo/_components/schema";
+import { serializaRolesEmpleado, type RolEmpleado } from "@/lib/roles-empleado";
 import {
   EntrenadoresService,
   CreateEntrenadorDto,
@@ -86,23 +87,25 @@ export function useCreateEntrenador() {
 }
 
 /**
- * Hook para cambiar el rol formal del staff (píldora Rol de la tabla Equipo).
- * Usa el endpoint admin users/edit (campo user.staff_role).
+ * Hook para cambiar los roles formales del staff (píldora Rol de la tabla
+ * Empleados). Usa el endpoint admin users/edit (campo user.staff_role), donde
+ * los varios roles de una persona viajan separados por comas.
+ *
+ * No avisa del error: quien llama es `CeldaEditableMultiple`, que necesita que
+ * la promesa REVIENTE para devolver la píldora a su valor anterior y ya enseña
+ * el aviso. Si además lo avisara aquí, saldrían dos.
  */
-export function useUpdateEntrenadorRol() {
+export function useUpdateEntrenadorRoles() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, rol }: { userId: string; rol: string }) => {
+    mutationFn: async ({ userId, roles }: { userId: string; roles: readonly RolEmpleado[] }) => {
       const { UsersService } = await import("@/lib/services/users-service");
-      return UsersService.updateUser({ user_id: userId, staff_role: rol });
+      return UsersService.updateUser({ user_id: userId, staff_role: serializaRolesEmpleado(roles) });
     },
-    onSuccess: (_data, { rol }) => {
+    onSuccess: (_data, { roles }) => {
       queryClient.invalidateQueries({ queryKey: entrenadoresKeys.lists() });
-      toast.success(`Rol cambiado a ${rol}`);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Error al cambiar el rol");
+      toast.success(roles.length ? `Roles: ${roles.join(", ")}` : "Roles quitados");
     },
   });
 }
@@ -198,7 +201,7 @@ export function useDeleteEntrenador() {
 }
 
 /**
- * Hook para cambiar el estado de un entrenador
+ * Activa o desactiva a un empleado (píldora Estado y menú de la fila).
  */
 export function useToggleEntrenadorStatus() {
   const queryClient = useQueryClient();
@@ -208,7 +211,7 @@ export function useToggleEntrenadorStatus() {
       EntrenadoresService.toggleEntrenadorStatus(id, status),
     onMutate: async ({ id, status }) => {
       const action = status === "Activo" ? "Activando" : "Desactivando";
-      toast.loading(`${action} entrenador...`, { id: `toggle-entrenador-${id}` });
+      toast.loading(`${action} empleado...`, { id: `toggle-entrenador-${id}` });
 
       // Cancelar queries para evitar conflictos
       await queryClient.cancelQueries({ queryKey: entrenadoresKeys.lists() });
@@ -224,7 +227,7 @@ export function useToggleEntrenadorStatus() {
       queryClient.invalidateQueries({ queryKey: entrenadoresKeys.lists() });
 
       const action = status === "Activo" ? "activado" : "desactivado";
-      toast.success(`Entrenador ${action} exitosamente`, { id: `toggle-entrenador-${id}` });
+      toast.success(`Empleado ${action} correctamente`, { id: `toggle-entrenador-${id}` });
 
       console.log("📨 Respuesta del servidor:", response);
     },

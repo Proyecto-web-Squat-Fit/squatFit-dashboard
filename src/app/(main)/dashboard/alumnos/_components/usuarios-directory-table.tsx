@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { useUsuariosDirectory, usuariosDirectoryKeys } from "@/hooks/use-usuarios-directory";
 import { exportCSV, exportPDF, exportXLSX, type ExportColumn } from "@/lib/export/table-export";
+import { parseRolesEmpleado } from "@/lib/roles-empleado";
 import { UsuariosDirectoryService } from "@/lib/services/usuarios-directory-service";
 import type { UsuarioDirectorio, UsuariosTab, StaffMember } from "@/lib/services/usuarios-directory-service";
 
@@ -501,8 +502,13 @@ export function UsuariosDirectoryTable() {
           </DialogHeader>
           <div className="flex flex-col gap-1">
             {(() => {
-              const people = staff.filter(
-                (s) => (s.staff_role ?? "").toLowerCase() === assignPicker?.staffRole.toLowerCase(),
+              // Un empleado puede tener VARIOS roles («Trainer,Nutri»), así que
+              // se busca dentro de la lista: comparar la columna entera dejaba
+              // fuera a quien tuviera más de uno.
+              const people = staff.filter((s) =>
+                parseRolesEmpleado(s.staff_role).some(
+                  (rol) => rol.toLowerCase() === assignPicker?.staffRole.toLowerCase(),
+                ),
               );
               if (!people.length)
                 return (

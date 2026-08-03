@@ -274,29 +274,40 @@ export class EntrenadoresService {
   }
 
   /**
-   * Cambia el estado de un entrenador
-   * Endpoint: PATCH /api/v1/coaches/{id}/status
+   * Activa o desactiva a un empleado.
+   * Endpoint: PUT /api/v1/admin-panel/coaches/status  →  { coach_id, status_login }
+   *
+   * Antes llamaba a `PATCH /api/v1/coaches/{id}/status`, que NO EXISTE: el
+   * backend respondía «Cannot PATCH /api/v1/coaches/…/status» (404) y
+   * desactivar a alguien no hacía nada. La ruta buena está en el módulo
+   * admin-panel, es PUT, lleva el id en el cuerpo y el estado como número
+   * (1 = activo, 0 = inactivo), que es lo que guarda `user.status_login`.
+   *
+   * El `coach_id` es el id de USUARIO. En la lista de coaches el backend
+   * devuelve el mismo valor en `id` y en `user_id`, así que sirven los dos.
+   *
+   * Devuelve solo un mensaje, no el empleado: quien llama refresca la lista.
    */
   static async toggleEntrenadorStatus(
     id: string,
     status: "Activo" | "Inactivo" | "Vacaciones" | "Pendiente",
-  ): Promise<Entrenador> {
+  ): Promise<{ message: string }> {
     if (!id) {
-      throw new Error("ID de entrenador requerido");
+      throw new Error("ID de empleado requerido");
     }
 
     try {
-      console.log("🔄 EntrenadoresService: Cambiando estado del entrenador:", id, "a", status);
+      console.log("🔄 EntrenadoresService: Cambiando estado del empleado:", id, "a", status);
 
-      const response = await this.makeRequest<ApiResponse<Entrenador>>(`/api/v1/coaches/${id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
+      const response = await this.makeRequest<{ message: string }>("/api/v1/admin-panel/coaches/status", {
+        method: "PUT",
+        body: JSON.stringify({ coach_id: id, status_login: status === "Activo" ? 1 : 0 }),
       });
 
-      console.log("✅ EntrenadoresService: Estado del entrenador actualizado");
-      return response.data;
+      console.log("✅ EntrenadoresService: Estado del empleado actualizado");
+      return response;
     } catch (error) {
-      console.error("Error cambiando estado del entrenador:", error);
+      console.error("Error cambiando estado del empleado:", error);
       throw error;
     }
   }
