@@ -108,7 +108,7 @@ export function PacksCards() {
         <CardHeader>
           <CardDescription>Pack más económico</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            €{stats.masEconomico.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatearImporte(stats.masEconomico, "eur")}
           </CardTitle>
           <CardAction>
             <Badge variant="outline" className="sqf-badge-orange">
