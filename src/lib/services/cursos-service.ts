@@ -325,6 +325,10 @@ export class CursosService {
       tutorProfilePicture: apiCurso.tutor?.profile_picture,
       videoPresentation: apiCurso.video_presentation || undefined,
       videos: (apiCurso as any).videos || undefined,
+      // Recuento de clases de muestra, ya resuelto por GET course/all. Sin
+      // `?? 0`: undefined significa «este backend no lo manda» y la celda
+      // lo distingue de un 0 de verdad.
+      freeSampleCount: (apiCurso as { free_sample_count?: number }).free_sample_count,
     };
   }
 

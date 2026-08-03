@@ -137,19 +137,17 @@ export function CursosTable() {
       ...base,
       {
         id: "muestra_gratuita",
-        // Sin `accessorFn` con dato real: el valor vive en `GET
-        // course/detail/:id`, que esta fila NO tiene precargado (solo lo
-        // trae `FreeSampleStatusCell` con su propia query) — por eso no se
-        // puede ordenar por esta columna. Se deja un `accessorFn` fijo
-        // igualmente para que la columna SÍ aparezca en «Vista» (ocultar y
-        // reordenar): el filtro de esa lista exige que exista, y esto es
-        // información real de la fila, no un hueco de acciones.
-        accessorFn: () => "",
+        // Desde el 3-ago el dato SÍ viaja en la fila: `GET course/all`
+        // devuelve `free_sample_count`. Antes vivía solo en
+        // `course/detail/:id` y la celda se lo pedía por su cuenta, una
+        // petición por fila visible. Ahora, además de no costar nada, la
+        // columna se puede ORDENAR: es útil para sacar arriba los cursos
+        // que aún no tienen ninguna, que es justo lo que hay que vigilar.
+        accessorFn: (row) => row.freeSampleCount ?? -1,
         size: 150,
         meta: { label: "Muestra gratuita" },
         header: () => "Muestra gratuita",
-        enableSorting: false,
-        cell: ({ row }) => <FreeSampleStatusCell cursoId={row.original.id} />,
+        cell: ({ row }) => <FreeSampleStatusCell count={row.original.freeSampleCount} />,
       },
       {
         id: "actions",

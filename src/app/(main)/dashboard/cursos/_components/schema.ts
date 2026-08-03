@@ -47,7 +47,12 @@ export const cursoSchema = z.object({
   tutorLastName: z.string().optional(),
   tutorProfilePicture: z.string().optional(),
   videoPresentation: z.string().optional(),
+  freeSampleCount: z.number().optional(),
   videos: z.array(z.any()).optional(), // Se añade arreglo de videos de manera flexible
+  // Cuántas clases del curso son muestra gratuita. Lo manda GET course/all
+  // desde el 3-ago. OPCIONAL a propósito: si el backend es más viejo llega
+  // undefined, y «no se sabe» no es lo mismo que «no tiene ninguna».
+  free_sample_count: z.number().optional(),
 });
 
 export type CursoApi = z.infer<typeof cursoApiSchema>;
