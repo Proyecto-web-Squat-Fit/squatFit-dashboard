@@ -87,6 +87,15 @@ export interface RecipeRankingRow {
    * "sin datos" con "se leyó 0 segundos").
    */
   avg_read_seconds: number | null;
+  /**
+   * Cuántos eventos `read_time` han entrado en `avg_read_seconds`, o sea el
+   * DENOMINADOR real de la media. Lo añadió el backend el 3-ago.
+   *
+   * Opcional a propósito: si respondiera una versión anterior del API, llega
+   * `undefined` y la tabla vuelve sola a usar `opens` como aproximación, como
+   * hacía antes. Mejor degradar que romper la pantalla.
+   */
+  read_time_events?: number;
 }
 
 export interface RecipeRankingParams {
