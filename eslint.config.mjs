@@ -146,6 +146,46 @@ export default [
 
       // SonarJS: Detect commented-out code
       "sonarjs/no-commented-code": "warn",
+
+      // sheetJS: prohibido LEER ficheros .xlsx.
+      //
+      // `xlsx` 0.18.5 arrastra dos avisos altos —Prototype Pollution
+      // (GHSA-4r6h-8v6p-xvw6) y ReDoS (GHSA-5pgg-2g8v-p4x9)— y `npm audit` dice
+      // fixAvailable: false porque sheetJS dejó de publicar en npm: las
+      // versiones corregidas viven en su propio CDN. Mientras el panel solo
+      // ESCRIBA xlsx (exportar tablas), los dos avisos son inalcanzables: están
+      // en el parser. Esta regla es lo que mantiene cierta esa frase. Si algún
+      // día hace falta importar un .xlsx, el aviso deja de ser teórico y hay que
+      // resolver la dependencia antes (CDN de sheetJS u otra librería), no
+      // silenciar la regla.
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "XLSX",
+          property: "read",
+          message:
+            "Leer .xlsx activa los avisos de sheetJS (Prototype Pollution y ReDoS) que no tienen arreglo en npm. Ver el comentario de esta regla en eslint.config.mjs.",
+        },
+        {
+          object: "XLSX",
+          property: "readFile",
+          message:
+            "Leer .xlsx activa los avisos de sheetJS (Prototype Pollution y ReDoS) que no tienen arreglo en npm. Ver el comentario de esta regla en eslint.config.mjs.",
+        },
+      ],
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "xlsx",
+              importNames: ["read", "readFile"],
+              message:
+                "Leer .xlsx activa los avisos de sheetJS (Prototype Pollution y ReDoS) que no tienen arreglo en npm. Ver el comentario de esta regla en eslint.config.mjs.",
+            },
+          ],
+        },
+      ],
     },
   },
 ];
