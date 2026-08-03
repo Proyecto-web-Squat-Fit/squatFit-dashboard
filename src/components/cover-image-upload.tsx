@@ -21,17 +21,31 @@ interface CoverImageUploadProps {
   disabled?: boolean;
   /** URL ya existente (modo edición) para mostrar como preview inicial. */
   initialPreviewUrl?: string | null;
+  /** Rótulo del bloque. Por defecto, el de las portadas del catálogo. */
+  titulo?: string;
+  /** Vista previa redonda, para fotos de perfil. */
+  redonda?: boolean;
   className?: string;
 }
 
 /**
- * Campo de portada de producto — subir archivo o pegar URL, con vista previa.
+ * Campo de imagen — subir archivo del ordenador o pegar URL, con vista previa.
  *
- * La portada se guarda en el mismo campo `image` que el carrito de la web ya
- * lee (libros/versiones/packs/cursos → `storage.googleapis.com`). Reutilizable
- * en todas las fichas del catálogo del back office.
+ * Nació para las portadas del catálogo, que se guardan en el mismo campo
+ * `image` que el carrito de la web ya lee (libros/versiones/packs/cursos →
+ * `storage.googleapis.com`), y sirve igual para la foto de perfil de un
+ * empleado: lo único que cambia es el rótulo, la forma de la vista previa y a
+ * qué endpoint manda el archivo quien lo use.
  */
-export function CoverImageUpload({ value, onChange, disabled, initialPreviewUrl, className }: CoverImageUploadProps) {
+export function CoverImageUpload({
+  value,
+  onChange,
+  disabled,
+  initialPreviewUrl,
+  titulo = "Imagen de portada",
+  redonda = false,
+  className,
+}: CoverImageUploadProps) {
   const [useUrl, setUseUrl] = useState(!!value.url && !value.file);
   const [preview, setPreview] = useState<string | null>(initialPreviewUrl ?? value.url ?? null);
   const objectUrlRef = useRef<string | null>(null);
@@ -75,7 +89,7 @@ export function CoverImageUpload({ value, onChange, disabled, initialPreviewUrl,
 
   return (
     <div className={cn("border-border/70 bg-background space-y-4 rounded-lg border p-4", className)}>
-      <p className="text-muted-foreground text-sm font-medium">Imagen de portada</p>
+      <p className="text-muted-foreground text-sm font-medium">{titulo}</p>
 
       <div className="flex gap-2">
         <Button
@@ -124,16 +138,18 @@ export function CoverImageUpload({ value, onChange, disabled, initialPreviewUrl,
             />
           )}
           <p className="text-muted-foreground text-xs">
-            {useUrl ? "URL pública de la portada." : "Formatos: JPG, PNG, WEBP (máx. 5 MB)."}
+            {useUrl ? "URL pública de la imagen." : "Formatos: JPG, PNG, WEBP (máx. 5 MB)."}
           </p>
         </div>
 
-        <div className="relative size-24 shrink-0 overflow-hidden rounded-lg border">
+        <div
+          className={cn("relative size-24 shrink-0 overflow-hidden border", redonda ? "rounded-full" : "rounded-lg")}
+        >
           {preview ? (
             <>
               <img
                 src={preview}
-                alt="Vista previa de la portada"
+                alt="Vista previa"
                 className="size-full object-cover"
                 onError={() => setPreview(null)}
               />
@@ -144,7 +160,7 @@ export function CoverImageUpload({ value, onChange, disabled, initialPreviewUrl,
                 onClick={clear}
                 disabled={disabled}
                 className="absolute top-1 right-1 size-6"
-                aria-label="Quitar portada"
+                aria-label="Quitar imagen"
               >
                 <X className="size-3.5" />
               </Button>

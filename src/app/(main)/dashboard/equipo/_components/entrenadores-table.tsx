@@ -9,6 +9,8 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { EditUserModal } from "@/components/modals/edit-user-modal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -24,11 +26,13 @@ import {
   useDeleteEntrenador,
   useEntrenadores,
   useToggleEntrenadorStatus,
-  useUpdateEntrenadorRol,
+  useUpdateEntrenadorRoles,
 } from "@/hooks/use-entrenadores";
 import { exportCSV, exportPDF, exportXLSX, type ExportColumn } from "@/lib/export/table-export";
+import { rolesDeEmpleado, serializaRolesEmpleado } from "@/lib/roles-empleado";
+import { getInitials } from "@/lib/utils";
 
-import { getEntrenadoresColumns, getEquipoRol } from "./columns.entrenadores";
+import { getEntrenadoresColumns } from "./columns.entrenadores";
 import { CreateEntrenadorModal } from "./create-entrenador-modal";
 import { EntrenadorUI } from "./schema";
 
@@ -42,7 +46,7 @@ export function EntrenadoresTable() {
   const { data: entrenadoresData, isLoading, error } = useEntrenadores();
   const deleteEntrenador = useDeleteEntrenador();
   const toggleEntrenador = useToggleEntrenadorStatus();
-  const updateRol = useUpdateEntrenadorRol();
+  const updateRoles = useUpdateEntrenadorRoles();
   const [viewUser, setViewUser] = useState<EntrenadorUI | null>(null);
 
   // Handlers del modal de edición
@@ -91,7 +95,9 @@ export function EntrenadoresTable() {
         onDelete: handleDeleteUser,
         onToggleStatus: handleToggleStatus,
         onView: (e) => setViewUser(e),
-        onChangeRol: (e, rol) => updateRol.mutate({ userId: e.user_id, rol }),
+        // `mutateAsync` y no `mutate`: la píldora necesita que la promesa
+        // reviente para devolver los roles a lo que había si el servidor falla.
+        onChangeRoles: (e, roles) => updateRoles.mutateAsync({ userId: e.user_id, roles }),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -115,6 +121,7 @@ export function EntrenadoresTable() {
     { key: "fullName", label: "Nombre" },
     { key: "email", label: "Email" },
     { key: "phone", label: "Teléfono" },
+    { key: "staff_role", label: "Roles", value: (e) => serializaRolesEmpleado(rolesDeEmpleado(e)) },
     { key: "status", label: "Estado" },
   ];
 
@@ -141,8 +148,10 @@ export function EntrenadoresTable() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div>
-          <CardTitle>Gestión de Entrenadores</CardTitle>
-          <CardDescription>Administra el equipo de entrenadores y profesionales</CardDescription>
+          <CardTitle>Gestión de Empleados</CardTitle>
+          <CardDescription>
+            Administra el equipo: entrenadores, nutris, soporte, ventas y administración
+          </CardDescription>
         </div>
         {/* <Button className="gap-2" onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -227,6 +236,7 @@ export function EntrenadoresTable() {
             phone_number: editingUser.phone || undefined,
             description: editingUser.description || undefined,
             profile_picture: editingUser.profile_picture || undefined,
+            staff_role: serializaRolesEmpleado(rolesDeEmpleado(editingUser)),
           }}
         />
       )}
@@ -234,18 +244,42 @@ export function EntrenadoresTable() {
       {/* Modal de Creación */}
       <CreateEntrenadorModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} />
 
-      {/* Ficha rápida del miembro del equipo */}
+      {/* Ficha rápida del empleado */}
       <Dialog open={!!viewUser} onOpenChange={(o) => !o && setViewUser(null)}>
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
-            <DialogTitle>{viewUser?.fullName}</DialogTitle>
-            <DialogDescription>{viewUser?.email}</DialogDescription>
+            <DialogTitle>Empleado</DialogTitle>
+            <DialogDescription>Ficha rápida. Para cambiar algo, «Editar».</DialogDescription>
           </DialogHeader>
           {viewUser && (
-            <div className="grid gap-2 text-sm">
-              <p>
-                <span className="text-muted-foreground">Rol:</span> {getEquipoRol(viewUser)}
-              </p>
+            <div className="grid gap-3 text-sm">
+              <div className="flex items-center gap-3">
+                <Avatar className="size-12">
+                  {viewUser.avatar && <AvatarImage src={viewUser.avatar} alt={viewUser.fullName} />}
+                  <AvatarFallback className="bg-orange-100 font-semibold text-orange-700">
+                    {getInitials(viewUser.fullName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{viewUser.fullName}</p>
+                  <p className="text-muted-foreground truncate text-xs">{viewUser.email}</p>
+                </div>
+              </div>
+
+              {/* Los roles: TODOS los que tenga, no solo el primero. */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-muted-foreground">Roles:</span>
+                {rolesDeEmpleado(viewUser).length ? (
+                  rolesDeEmpleado(viewUser).map((rol) => (
+                    <Badge key={rol} variant="outline" className="sqf-badge-indigo">
+                      {rol}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground italic">Sin rol asignado</span>
+                )}
+              </div>
+
               <p>
                 <span className="text-muted-foreground">Teléfono:</span> {viewUser.phone || "—"}
               </p>
