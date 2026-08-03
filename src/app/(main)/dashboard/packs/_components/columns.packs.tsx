@@ -2,9 +2,11 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 
+import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 
 import type { Pack } from "./schema";
 
@@ -36,10 +38,12 @@ export const packsColumns: ColumnDef<Pack>[] = [
     accessorKey: "name",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
     cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span className="font-medium">{row.original.name}</span>
+      <div className="flex min-w-0 flex-col">
+        <CeldaTexto className="font-medium">{row.original.name}</CeldaTexto>
         {row.original.description && (
-          <span className="text-muted-foreground line-clamp-1 text-xs">{row.original.description}</span>
+          <CeldaTexto apagado className="text-xs">
+            {row.original.description}
+          </CeldaTexto>
         )}
       </div>
     ),
@@ -48,7 +52,12 @@ export const packsColumns: ColumnDef<Pack>[] = [
   {
     accessorKey: "price",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Precio" />,
-    cell: ({ row }) => <span className="font-medium tabular-nums">€{row.original.price.toFixed(2)}</span>,
+    // Mismo formato que el resto del panel: punto decimal y el símbolo DETRÁS
+    // («80.00 €»). Aquí iba delante, así que el mismo importe se leía distinto
+    // en Packs y en Pedidos.
+    cell: ({ row }) => (
+      <span className="font-medium tabular-nums">{formatearImporte(row.original.price, "eur")}</span>
+    ),
   },
   {
     accessorKey: "versionsCount",

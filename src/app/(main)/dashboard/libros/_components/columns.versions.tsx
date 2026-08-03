@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { VersionApi } from "@/lib/services/libros-service";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 
 interface VersionActionsProps {
   version: VersionApi;
@@ -87,7 +88,7 @@ export function getVersionsColumns(
     {
       accessorKey: "price",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Precio" />,
-      cell: ({ row }) => <span className="tabular-nums">€{parseFloat(row.original.price || "0").toFixed(2)}</span>,
+      cell: ({ row }) => <span className="tabular-nums">{formatearImporte(row.original.price, "eur")}</span>,
     },
     {
       id: "actions",

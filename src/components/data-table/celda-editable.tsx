@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CLASE_CELDA_AJUSTADA } from "@/lib/formato-de-tablas";
 import { cn } from "@/lib/utils";
 
 /**
@@ -102,16 +103,23 @@ export function CeldaEditable({
     }
   };
 
+  // La píldora AJUSTA el texto en vez de cortarlo (norma «formato de tablas»):
+  // llevaba `truncate`, y con la columna Pago a su ancho normal eso dejaba
+  // «Sin cobrar» en «Sin cobra». Media palabra dentro de una píldora de estado
+  // no se entiende, y encima la parte que se pierde es la que distingue un
+  // estado de otro. Ahora la píldora crece hacia abajo, que es feo solo cuando
+  // la columna está muy estrecha — y entonces es el usuario quien lo ha elegido.
   const pildora = (
     <span
       className={cn(
-        "inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+        CLASE_CELDA_AJUSTADA,
         opcion?.clase ?? CLASE_VACIO,
         !opcion && "italic",
       )}
     >
       {opcion?.prefijo && <span aria-hidden>{opcion.prefijo}</span>}
-      <span className="truncate">{etiqueta}</span>
+      <span className={CLASE_CELDA_AJUSTADA}>{etiqueta}</span>
     </span>
   );
 

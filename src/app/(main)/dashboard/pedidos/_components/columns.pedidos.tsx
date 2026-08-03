@@ -6,17 +6,17 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, Eye, Loader2, Mail, Undo2, User } from "lucide-react";
 
 import { CeldaEditable, type OpcionCelda } from "@/components/data-table/celda-editable";
+import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { MetaColumna } from "@/lib/formato-de-tablas";
+import { formatearImporte, type MetaColumna } from "@/lib/formato-de-tablas";
 import {
   MANUAL_PAYMENT_METHODS,
   ORDER_STATUSES,
   ORDER_STATUS_META,
   PAYMENT_METHOD_LABEL,
   PAYMENT_METHODS,
-  formatOrderPrice,
   itemsSummary,
   relativeDate,
   type Order,
@@ -85,12 +85,32 @@ const OPCIONES_PAGO: OpcionCelda[] = PAYMENT_METHODS.map((m) => ({
 
 /**
  * El pago solo se toca cuando lo puso una persona (seQura/efectivo) o cuando no
- * hay ninguno. Si lo fijó Stripe —tarjeta, SEPA, Klarna— la píldora sale de solo
- * lectura: cambiarlo desde la fila no movería el cobro real, solo estropearía la
- * contabilidad de un pedido ya cobrado.
+ * hay ninguno. Si lo fijó Stripe —tarjeta, SEPA, Klarna, Link…— la píldora sale
+ * de solo lectura: cambiarlo desde la fila no movería el cobro real, solo
+ * estropearía la contabilidad de un pedido ya cobrado.
+ *
+ * La comparación es contra los MANUALES, no contra la lista de conocidos: un
+ * instrumento que Stripe estrene mañana tiene que salir de solo lectura por
+ * defecto, no volverse editable por no estar en ninguna lista nuestra.
  */
-function pagoEditable(metodo: PaymentMethod | null): boolean {
-  return metodo === null || MANUAL_PAYMENT_METHODS.includes(metodo);
+function pagoEditable(metodo: string | null): boolean {
+  return metodo === null || (MANUAL_PAYMENT_METHODS as string[]).includes(metodo);
+}
+
+/**
+ * Un pedido sin instrumento de pago puede serlo por dos motivos opuestos, y la
+ * celda tiene que decir cuál (norma «"sin datos" no es lo mismo que cero»):
+ *
+ * - Nunca se cobró (pendiente, cancelado): **«Sin cobrar»**. No falta ningún
+ *   dato; es que no hay pago que registrar y no hay nada que hacer.
+ * - Cobrado, pero sin instrumento guardado: **«Sin marcar»**. Ahí sí falta un
+ *   dato y alguien tiene que ponerlo (una venta manual por seQura o efectivo).
+ *
+ * Antes las dos decían «Sin marcar», así que la columna parecía llena de
+ * deberes pendientes cuando la mitad eran carritos abandonados.
+ */
+function textoPagoVacio(estado: OrderStatus): string {
+  return estado === "pending" || estado === "cancelled" ? "Sin cobrar" : "Sin marcar";
 }
 
 /** Iconos de acción por fila; el set depende del estado del pedido. */
@@ -181,12 +201,21 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
       header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
       meta: { label: "Nombre y email", obligatoriaPara: META_OBLIGATORIA } satisfies MetaColumna,
       size: 220,
-      cell: ({ row }) => (
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate font-medium">{row.original.customerName}</span>
-          <span className="text-muted-foreground truncate text-xs">{row.original.customerEmail}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const { customerName, customerEmail } = row.original;
+        // Cuando el backend no encuentra ningún nombre devuelve el email (misma
+        // cadena que la factura). Repetirlo en las dos líneas no aporta nada:
+        // se enseña una sola vez.
+        const soloEmail = !customerName || customerName === customerEmail;
+        return (
+          <div className="flex min-w-0 flex-col">
+            {!soloEmail && <CeldaTexto className="font-medium">{customerName}</CeldaTexto>}
+            <CeldaTexto apagado className={soloEmail ? undefined : "text-xs"}>
+              {customerEmail}
+            </CeldaTexto>
+          </div>
+        );
+      },
     },
     {
       id: "pedido",
@@ -215,14 +244,11 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
       header: ({ column }) => <DataTableColumnHeader column={column} title="Productos" />,
       meta: { label: "Productos" } satisfies MetaColumna,
       size: 220,
-      cell: ({ row }) => {
-        const resumen = itemsSummary(row.original.items);
-        return (
-          <span className="text-muted-foreground block truncate text-sm" title={resumen}>
-            {resumen}
-          </span>
-        );
-      },
+      cell: ({ row }) => (
+        <CeldaTexto apagado className="text-sm">
+          {itemsSummary(row.original.items)}
+        </CeldaTexto>
+      ),
     },
     {
       id: "origen",
@@ -231,9 +257,9 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
       meta: { label: "Origen" } satisfies MetaColumna,
       size: 150,
       cell: ({ row }) => (
-        <span className="text-muted-foreground block truncate text-xs" title={row.original.origin ?? ""}>
-          {row.original.origin ?? "—"}
-        </span>
+        <CeldaTexto apagado className="text-xs">
+          {row.original.origin}
+        </CeldaTexto>
       ),
     },
     {
@@ -249,7 +275,7 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
           <CeldaEditable
             valor={metodo}
             opciones={OPCIONES_PAGO}
-            vacio="Sin marcar"
+            vacio={textoPagoVacio(row.original.status)}
             // No hay «ningún método» en el backend: el DTO exige uno de los cinco.
             permiteVaciar={false}
             onGuardar={(v) => acciones.onCambiarPago(row.original, v as PaymentMethod)}
@@ -283,7 +309,7 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
         const tachado = ORDER_STATUS_META[row.original.status].struck;
         return (
           <span className={`tabular-nums ${tachado ? "text-muted-foreground line-through" : ""}`}>
-            {formatOrderPrice(row.original.total, row.original.currency)}
+            {formatearImporte(row.original.total, row.original.currency)}
           </span>
         );
       },

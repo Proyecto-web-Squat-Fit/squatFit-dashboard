@@ -73,6 +73,10 @@ function renderTableBody<TData, TValue>({
       {row.getVisibleCells().map((cell) => (
         <TableCell
           key={cell.id}
+          // Arriba y no al centro: en cuanto una celda ajusta el texto y ocupa
+          // dos líneas (ver CeldaTexto), centrar el resto de la fila descoloca
+          // la lectura en horizontal. Con filas de una línea no se nota.
+          className="align-top"
           // Con table-layout fixed, el ancho de la celda debe acompañar al de
           // su columna para que el redimensionado no tenga tope de contenido.
           style={sizedCells ? { width: cell.column.getSize(), overflow: "hidden" } : undefined}

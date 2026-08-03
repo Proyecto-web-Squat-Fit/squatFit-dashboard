@@ -1,5 +1,6 @@
 import { handleUnauthorized } from "@/lib/api-client";
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 import { API_BASE_URL } from "@/lib/services/api-base";
 
 /** Corta peticiones colgadas para que la UI no quede en isLoading para siempre. */
@@ -56,20 +57,50 @@ export const ORDER_STATUS_META: Record<OrderStatus, StatusMeta> = {
   },
 };
 
-/** Métodos de pago manuales/instrumento (contrato PAYMENT_METHODS). */
+/**
+ * Métodos de pago que el staff puede FIJAR A MANO (contrato
+ * `UpdateOrderPaymentDTO` del backend: el PUT solo acepta estos cinco).
+ *
+ * Ojo, no es la lista de lo que puede LLEGAR: el instrumento real lo escribe el
+ * webhook de Stripe con lo que diga `payment_method_details.type`, y ese
+ * catálogo es de Stripe y crece solo (link, paypal, bizum, ideal…). Confundir
+ * las dos listas es lo que rompía la columna «Pago» — ver `normalizePayment`.
+ */
 export const PAYMENT_METHODS = ["card", "sepa_debit", "klarna", "sequra", "cash"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
-export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+/**
+ * Nombre legible de un instrumento de pago. Además de los cinco marcables,
+ * incluye los que Stripe devuelve de verdad en esta cuenta y no se podían
+ * fijar a mano — `link` es el más común (pagar con la cartera de Stripe: 2 de
+ * los 4 pedidos cobrados de producción venían así).
+ */
+export const PAYMENT_METHOD_LABEL: Record<string, string> = {
   card: "Tarjeta",
   sepa_debit: "SEPA",
   klarna: "Klarna",
   sequra: "seQura",
   cash: "Efectivo",
+  link: "Link",
+  paypal: "PayPal",
+  bizum: "Bizum",
+  ideal: "iDEAL",
+  bancontact: "Bancontact",
+  revolut_pay: "Revolut Pay",
+  amazon_pay: "Amazon Pay",
+  customer_balance: "Transferencia",
 };
 
 /** Métodos que el staff puede fijar a mano (pagos no automáticos de Stripe). */
 export const MANUAL_PAYMENT_METHODS: PaymentMethod[] = ["sequra", "cash"];
+
+/** Nombre legible de un instrumento, conocido o no. Nunca devuelve vacío. */
+export function paymentMethodLabel(method: string | null | undefined): string | null {
+  if (!method) return null;
+  // Un método que Stripe estrene mañana se enseña tal cual (`revolut_pay` →
+  // «Revolut pay»): informa mucho más que decir que no hay método de pago.
+  return PAYMENT_METHOD_LABEL[method] ?? method.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
 
 // ─── Motivos de reembolso ────────────────────────────────────────────────────
 // Etiqueta legible ↔ slug del backend (RefundOrderDTO).
@@ -113,7 +144,13 @@ export interface Order {
   status: OrderStatus;
   total: number;
   currency: string;
-  paymentMethod: PaymentMethod | null;
+  /**
+   * Instrumento real del cobro. Cadena libre a propósito: los cinco de
+   * `PAYMENT_METHODS` son los que se pueden marcar a mano, pero Stripe manda
+   * los suyos (`link`, `paypal`…) y hay que enseñarlos, no descartarlos.
+   * `null` = el pedido no se ha cobrado.
+   */
+  paymentMethod: string | null;
   origin: string | null;
   refundReason: string | null;
   refundNote: string | null;
@@ -219,12 +256,21 @@ export interface RefundOrderPayload {
 // transportista + nº de seguimiento. El backend deja el pedido en «Enviado» y
 // avisa al cliente por email con el enlace de seguimiento.
 
-export const SHIPMENT_CARRIERS = ["correos_express", "correos", "otro"] as const;
+// El contrato es con **Correos**, no con Correos Express (son dos empresas
+// distintas). Se ofrecía «Correos Express» y además era el valor por defecto,
+// así que un envío registrado sin fijarse salía con el transportista
+// equivocado en el email al cliente. Mismo cambio en el DTO del backend.
+export const SHIPMENT_CARRIERS = ["correos", "otro"] as const;
 export type ShipmentCarrier = (typeof SHIPMENT_CARRIERS)[number];
 
-export const CARRIER_LABEL: Record<ShipmentCarrier, string> = {
-  correos_express: "Correos Express",
+/**
+ * `correos_express` ya no se ofrece, pero se mantiene etiquetado por si algún
+ * envío antiguo lo tuviera guardado: mejor decir «Correos» que nombrar a un
+ * transportista con el que no se trabaja.
+ */
+export const CARRIER_LABEL: Record<string, string> = {
   correos: "Correos",
+  correos_express: "Correos",
   otro: "Otro transportista",
 };
 
@@ -280,7 +326,7 @@ export interface UpdateShipmentPayload {
 function normalizeShipment(raw: any): Shipment {
   const carrier = (SHIPMENT_CARRIERS as readonly string[]).includes(raw?.carrier)
     ? (raw.carrier as ShipmentCarrier)
-    : "correos_express";
+    : "correos";
   return {
     shipmentId: String(raw?.shipment_id ?? ""),
     orderId: String(raw?.order_id ?? ""),
@@ -319,9 +365,26 @@ function normalizeStatus(v: unknown): OrderStatus {
   return (ORDER_STATUSES as readonly string[]).includes(s) ? (s as OrderStatus) : "pending";
 }
 
-function normalizePayment(v: unknown): PaymentMethod | null {
-  const s = String(v ?? "").toLowerCase();
-  return (PAYMENT_METHODS as readonly string[]).includes(s) ? (s as PaymentMethod) : null;
+/**
+ * El instrumento de pago TAL COMO viene, sin filtrarlo por una lista blanca.
+ *
+ * Antes esto era `PAYMENT_METHODS.includes(s) ? s : null`, y ahí estaba el
+ * fallo de la columna «Pago»: el webhook guarda lo que dice Stripe
+ * (`payment_method_details.type`), que incluye valores que NO están entre los
+ * cinco marcables a mano. Un pedido cobrado con `link` llegaba con su método
+ * bien guardado en la base de datos, el listado lo devolvía bien, y el back
+ * office lo tiraba a la basura y pintaba «Sin marcar» — que significa lo
+ * contrario: que nadie ha cobrado. En producción pasaba en la mitad de los
+ * pedidos cobrados.
+ *
+ * `null` queda reservado para lo que de verdad no tiene método: un pedido
+ * pendiente que nunca llegó a pagarse.
+ */
+function normalizePayment(v: unknown): string | null {
+  const s = String(v ?? "")
+    .trim()
+    .toLowerCase();
+  return s || null;
 }
 
 export function normalizeOrder(raw: any): Order {
@@ -650,24 +713,25 @@ export function relativeDate(iso: string): string {
   return d.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 }
 
-/** Resumen legible de los productos del pedido para la columna «Productos». */
+/**
+ * Resumen legible de los productos del pedido para la columna «Productos».
+ *
+ * Ya no recorta a «los dos primeros +N»: ese recorte existía porque la celda
+ * era de una sola línea y no cabía más. Ahora la celda ajusta el texto y salta
+ * de línea (norma «formato de tablas»), así que se enseñan todos — saber qué
+ * lleva el pedido es justo lo que hay que mirar para prepararlo.
+ */
 export function itemsSummary(items: OrderItem[]): string {
   if (!items.length) return "—";
-  const names = items.map((i) => (i.quantity > 1 ? `${i.product_name} ×${i.quantity}` : i.product_name));
-  if (names.length <= 2) return names.join(", ");
-  return `${names.slice(0, 2).join(", ")} +${names.length - 2}`;
+  return items.map((i) => (i.quantity > 1 ? `${i.product_name} ×${i.quantity}` : i.product_name)).join(", ");
 }
 
-const CURRENCY_SYMBOL: Record<string, string> = {
-  eur: "€",
-  usd: "$",
-  gbp: "£",
-  mxn: "$",
-  cop: "$",
-  clp: "$",
-  pen: "S/",
-};
+/**
+ * Importe de un pedido. Delega en la norma de tablas para que Pedidos, Packs,
+ * Catálogo y las tarjetas de inicio pinten la misma cifra igual (punto decimal,
+ * símbolo detrás). Se conserva el nombre porque lo usan la exportación y la
+ * ficha del pedido.
+ */
 export function formatOrderPrice(total: number, currency: string): string {
-  const sym = CURRENCY_SYMBOL[currency] ?? currency.toUpperCase();
-  return `${total.toFixed(2)} ${sym}`;
+  return formatearImporte(total, currency);
 }

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRecentSales } from "@/hooks/use-sales";
 import type { Sale, SaleStatus, SaleType } from "@/lib/services/sales-types";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 
 // ============================================================================
 // HELPERS
@@ -67,13 +68,12 @@ function getStatusBadgeVariant(status: SaleStatus) {
   }
 }
 
+// Mismo formato de importe que las tablas (punto decimal, símbolo detrás): un
+// pedido de 49 € tiene que leerse igual en la portada del panel que en Pedidos.
 function formatCurrency(amount: string, currency: string) {
   const num = Number.parseFloat(amount);
   if (Number.isNaN(num)) return `${amount} ${currency}`;
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: currency || "EUR",
-  }).format(num);
+  return formatearImporte(num, currency || "eur");
 }
 
 function formatDate(dateStr: string) {

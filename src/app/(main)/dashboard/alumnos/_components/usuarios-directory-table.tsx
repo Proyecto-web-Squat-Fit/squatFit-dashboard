@@ -10,6 +10,7 @@ import { Download, Eye, IdCard, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { BulkActionsBar } from "@/components/data-table/bulk-actions-bar";
+import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
@@ -114,7 +115,7 @@ export function UsuariosDirectoryTable() {
         header: "Nombre",
         meta: { label: "Nombre" },
         size: 190,
-        cell: ({ row }) => <span className="font-medium text-[#FF690B]">{row.original.name}</span>,
+        cell: ({ row }) => <CeldaTexto className="font-medium text-[#FF690B]">{row.original.name}</CeldaTexto>,
         enableHiding: false,
       },
       {
@@ -122,14 +123,18 @@ export function UsuariosDirectoryTable() {
         header: "Email",
         meta: { label: "Email" },
         size: 210,
-        cell: ({ row }) => <span className="text-sm">{row.original.email}</span>,
+        cell: ({ row }) => <CeldaTexto className="text-sm">{row.original.email}</CeldaTexto>,
       },
       {
         accessorKey: "phone",
         meta: { label: "Teléfono" },
         header: "Teléfono",
         size: 130,
-        cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.phone}</span>,
+        cell: ({ row }) => (
+          <CeldaTexto apagado className="text-sm">
+            {row.original.phone}
+          </CeldaTexto>
+        ),
       },
       {
         accessorKey: "address",
@@ -137,9 +142,9 @@ export function UsuariosDirectoryTable() {
         header: "Dirección",
         size: 220,
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-sm" title={row.original.address}>
+          <CeldaTexto apagado className="text-sm">
             {row.original.address}
-          </span>
+          </CeldaTexto>
         ),
       },
       {

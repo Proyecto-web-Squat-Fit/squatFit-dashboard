@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCursos } from "@/hooks/use-cursos";
+import { formatearImporte } from "@/lib/formato-de-tablas";
 
 export function CursosCards() {
   const { data: cursos = [], isLoading } = useCursos();
@@ -120,7 +121,7 @@ export function CursosCards() {
         <CardHeader>
           <CardDescription>Ingresos Potenciales</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            €{stats.ingresosPotenciales.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatearImporte(stats.ingresosPotenciales, "eur")}
           </CardTitle>
           <CardAction>
             <Badge variant="outline" className="sqf-badge-orange">
@@ -131,7 +132,7 @@ export function CursosCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">Basado en inscripciones actuales</div>
-          <div className="text-muted-foreground">Precio promedio: €{stats.precioPromedio.toFixed(2)} por curso</div>
+          <div className="text-muted-foreground">Precio promedio: {formatearImporte(stats.precioPromedio, "eur")} por curso</div>
         </CardFooter>
       </Card>
     </div>
