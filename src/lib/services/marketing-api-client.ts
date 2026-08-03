@@ -1,11 +1,15 @@
 import type { FiltrosMarketing } from "@/app/(main)/dashboard/marketing/_components/schema";
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // CONFIGURACIÓN DEL SERVICIO
 // ============================================================================
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
+// Se importa Y se reexporta: marketing-service.ts lo consume desde aquí desde
+// antes de que existiera el módulo común, y este fichero lo usa además en su
+// propio código, que un `export … from` suelto no cubre.
+export { API_BASE_URL };
 const REQUEST_TIMEOUT = 10000;
 
 // ============================================================================

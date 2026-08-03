@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // Servicio de REDIRECCIONES / Pretty Links del back office.
@@ -15,7 +16,6 @@ import { getAuthToken } from "@/lib/auth/auth-utils";
 // El backend rechaza slugs duplicados con 400 ("El slug "X" ya existe").
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 12000;
 
 export interface Redirect {

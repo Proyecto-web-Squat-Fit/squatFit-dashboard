@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL as API_BASE_URL_COMPARTIDO } from "@/lib/services/api-base";
 
 // ============================================================================
 // TIPOS E INTERFACES
@@ -27,8 +28,7 @@ class RolesConfigService {
   private rolesCache: RoleConfig[] | null = null;
   private cacheExpiry: number = 0;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-  private readonly API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || "https://squatfit-api-985835765452.europe-southwest1.run.app";
+  private readonly API_BASE_URL = API_BASE_URL_COMPARTIDO;
 
   /**
    * Obtiene los roles desde el backend (con caché)

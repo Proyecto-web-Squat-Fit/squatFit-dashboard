@@ -6,6 +6,7 @@
  */
 
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 import { CalculatorService } from "./calculator-service";
 import { ChatTasksService } from "./chat-tasks.service";
@@ -26,7 +27,6 @@ import type {
 // CONFIGURACIÓN DEL SERVICIO
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 10000;
 
 // ============================================================================

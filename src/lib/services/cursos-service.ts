@@ -5,12 +5,12 @@ import {
   type ProductDeliveryValue,
 } from "@/components/product-delivery-fields";
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // CONFIGURACIÓN DEL SERVICIO
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 10000;
 
 // ============================================================================
