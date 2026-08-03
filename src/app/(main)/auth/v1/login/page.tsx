@@ -6,10 +6,30 @@ import { isAuthenticatedServer } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginV1() {
+/**
+ * `?redirect=…` significa «he llegado aquí REBOTADO»: lo pone el middleware
+ * cuando no hay sesión, y `handleUnauthorized` cuando el API contesta 401.
+ *
+ * En ese caso NO se redirige al panel aunque la cookie parezca válida. Ese
+ * rebote era la segunda mitad del bucle que dejaba el back office encallado
+ * tras cada despliegue: el API rechazaba el token, el cliente mandaba al login,
+ * y el login —mirando solo si el JWT ha caducado, cosa que no pasa hasta los 90
+ * días— devolvía al panel. Aquí solo se comprueba la FORMA del token, no si el
+ * backend lo sigue aceptando; por eso no puede ser la última palabra.
+ *
+ * Sin el parámetro se mantiene el atajo de siempre: quien entra a mano en
+ * /auth/v1/login teniendo sesión, al panel.
+ */
+export default async function LoginV1({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { redirect: destino } = await searchParams;
+  const llegaRebotado = typeof destino === "string" && destino.length > 0;
   const isAuthenticated = await isAuthenticatedServer();
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !llegaRebotado) {
     redirect("/dashboard");
   }
   // Auth

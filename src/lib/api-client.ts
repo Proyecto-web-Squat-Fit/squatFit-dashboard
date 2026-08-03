@@ -20,16 +20,56 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+/** Un 401 puede llegar por varias peticiones a la vez; se cierra sesión UNA. */
+let cerrandoSesion = false;
+
 /**
  * Cierra la sesión ante un 401 (token expirado/inválido) y manda al login.
  * Reutilizable desde los servicios que usan `fetch` crudo (leads, orders,
  * products, notifications) para que un 401 no se pinte como «no hay datos».
+ *
+ * OJO CON LA COOKIE. El token vive en DOS sitios: `localStorage` (lo lee el
+ * cliente para la cabecera Authorization) y una cookie `authToken` **httpOnly**
+ * (la lee el middleware para dejarte entrar en `/dashboard`). Esto borraba solo
+ * el de localStorage — y una cookie httpOnly NO se puede borrar desde
+ * JavaScript, por definición. La cookie se quedaba, con su JWT de 90 días sin
+ * caducar, así que:
+ *
+ *   401 → «cierro sesión» → /auth/v1/login → el servidor ve la cookie y te
+ *   considera autenticado → te devuelve a /dashboard → 401 → …
+ *
+ * Nunca llegabas al formulario. El panel se quedaba con todos los datos en
+ * «Error al cargar» y la única salida real era borrar las cookies a mano. Por
+ * eso ahora se llama a `/api/auth/logout`, que es la ÚNICA vía que puede
+ * borrarla (corre en el servidor) y que además avisa al backend.
+ *
+ * La navegación va en `finally`: si la llamada de logout falla (justo el caso
+ * en que el backend no responde), hay que ir al login igualmente.
  */
 export const handleUnauthorized = (): void => {
+  if (typeof window === "undefined") return;
+  if (cerrandoSesion) return;
+  cerrandoSesion = true;
+
   removeAuthToken();
-  if (typeof window !== "undefined") {
-    window.location.href = "/auth/v1/login";
-  }
+
+  // Se conserva dónde estaba la persona para devolverla ahí tras entrar. El
+  // propio login usa este parámetro para saber que llega REBOTADA y no
+  // mandarla de vuelta al panel (ver la página de login).
+  const vueltaA = `${window.location.pathname}${window.location.search}`;
+  const destino = vueltaA.startsWith("/auth")
+    ? "/auth/v1/login"
+    : `/auth/v1/login?redirect=${encodeURIComponent(vueltaA)}`;
+
+  void fetch("/api/auth/logout", { method: "POST" })
+    .catch(() => {
+      // Da igual por qué falle: lo importante es no dejar a nadie encerrado.
+    })
+    .finally(() => {
+      // `replace` y no `href`: la pantalla que acaba de dar 401 no debe quedar
+      // en el historial, o el botón «atrás» vuelve a meterte en el bucle.
+      window.location.replace(destino);
+    });
 };
 
 // Interceptor para manejar errores de autenticación y rate limiting
