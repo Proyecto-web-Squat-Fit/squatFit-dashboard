@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // Servicio del EDITOR DE RECETAS del back office (Fase 17)
@@ -13,7 +14,6 @@ import { getAuthToken } from "@/lib/auth/auth-utils";
 // con el contenido de cursos. Al desplegar, poner el flag a true.
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 12000;
 
 // Encender cuando el backend exponga admin-panel/recipes/* en prod.

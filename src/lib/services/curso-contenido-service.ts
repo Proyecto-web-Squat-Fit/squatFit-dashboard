@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // Servicio de CONTENIDO de cursos (FASE contenido de formaciones)
@@ -10,7 +11,6 @@ import { getAuthToken } from "@/lib/auth/auth-utils";
 // poner el flag a true (o ?real=1) y funciona contra la API sin más cambios.
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 12000;
 
 // Encender cuando el backend (features-lote-7) esté desplegado en prod.

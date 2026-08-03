@@ -1,9 +1,8 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 import { CursosService } from "./cursos-service";
 import { LibrosService } from "./libros-service";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
 
 // ============================================================================
 // GRANT PRODUCT

@@ -1,7 +1,8 @@
+import { API_BASE_URL } from "@/lib/services/api-base";
+
 import { LoginRequest } from "../auth/types";
 
 // Configuración del backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
 
 // Servicio de autenticación
 export class AuthService {

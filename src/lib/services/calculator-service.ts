@@ -4,6 +4,7 @@
  */
 
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 import type { CalculateIMCDto, IMCCalculationResponse, IMCHistoryRecord, IMCHistoryResponse } from "./calculator-types";
 
@@ -11,7 +12,6 @@ import type { CalculateIMCDto, IMCCalculationResponse, IMCHistoryRecord, IMCHist
 // CONFIGURACIÓN DEL SERVICIO
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 10000;
 
 // ============================================================================

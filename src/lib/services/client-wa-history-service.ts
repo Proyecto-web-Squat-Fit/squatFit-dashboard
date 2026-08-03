@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
 // ============================================================================
 // HISTORIAL DE WHATSAPP DE UN CLIENTE — pestaña «Chats» de la ficha del
@@ -21,7 +22,6 @@ import { getAuthToken } from "@/lib/auth/auth-utils";
 // si no está aplicada, el middleware falla cerrado con 401.
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
 const REQUEST_TIMEOUT = 15000;
 
 /** Búsqueda mínima aceptada por el backend; por debajo de esto responde 400. */

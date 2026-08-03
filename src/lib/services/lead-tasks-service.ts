@@ -1,7 +1,7 @@
 import { handleUnauthorized } from "@/lib/api-client";
 import { getAuthToken } from "@/lib/auth/auth-utils";
+import { API_BASE_URL } from "@/lib/services/api-base";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-985835765452.europe-southwest1.run.app";
 const REQUEST_TIMEOUT = 12000;
 
 // ============================================================================
