@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, Pencil, Trash2, Eye, Power, Mail, Phone } from "lucide-react";
 
+import { CeldaEditableMultiple } from "@/components/data-table/celda-editable-multiple";
 import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EditablePill } from "@/components/ui/editable-pill";
+import { OPCIONES_ROL_EMPLEADO, rolesDeEmpleado, type RolEmpleado } from "@/lib/roles-empleado";
 
 import { EntrenadorUI } from "./schema";
 
@@ -41,24 +43,6 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-/** Roles formales del staff (Doc 0 cap. 1.1), editables desde la píldora Rol. */
-export const STAFF_ROLES = ["Nutri", "Trainer", "Psicóloga", "Soporte", "Ventas", "Admin"] as const;
-
-/**
- * Rol del miembro del equipo: primero el campo formal `staff_role` (BD) y,
- * si aún no está asignado, se deriva de la descripción como hasta ahora.
- */
-export const getEquipoRol = (e: EntrenadorUI): string => {
-  if (e.staff_role) return e.staff_role;
-  const d = (e.description || "").toLowerCase();
-  if (/nutri|dietista|dieta/.test(d)) return "Nutri";
-  if (/trainer|entrena|entreno/.test(d)) return "Trainer";
-  if (/psic/.test(d)) return "Psicóloga";
-  if (/venta|closer|setter/.test(d)) return "Ventas";
-  if (/soporte|support/.test(d)) return "Soporte";
-  return "Preparador";
-};
-
 const getInitials = (firstName: string, lastName: string) => {
   const first = firstName?.charAt(0) || "";
   const last = lastName?.charAt(0) || "";
@@ -74,7 +58,8 @@ interface ColumnHandlers {
   onDelete?: (entrenador: EntrenadorUI) => void;
   onToggleStatus?: (entrenador: EntrenadorUI) => void;
   onView?: (entrenador: EntrenadorUI) => void;
-  onChangeRol?: (entrenador: EntrenadorUI, rol: string) => void;
+  /** Recibe la lista COMPLETA de roles, no el que se acaba de tocar. */
+  onChangeRoles?: (entrenador: EntrenadorUI, roles: RolEmpleado[]) => Promise<unknown>;
 }
 
 // ============================================================================
@@ -108,7 +93,7 @@ export const getEntrenadoresColumns = (handlers: ColumnHandlers = {}): ColumnDef
   {
     accessorKey: "fullName",
     meta: { label: "Nombre", obligatoriaPara: ["adviser", "support", "trainer", "nutritionist"] },
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Entrenador" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" />,
     cell: ({ row }) => {
       const initials = getInitials(row.original.firstName, row.original.lastName);
       return (
@@ -148,22 +133,17 @@ export const getEntrenadoresColumns = (handlers: ColumnHandlers = {}): ColumnDef
     id: "rol",
     meta: { label: "Rol" },
     header: "Rol",
-    size: 130,
-    cell: ({ row }) => {
-      const current = getEquipoRol(row.original);
-      return (
-        <EditablePill
-          options={STAFF_ROLES.map((r) => ({ value: r, label: r }))}
-          onSelect={(v) => {
-            if (v !== row.original.staff_role) handlers.onChangeRol?.(row.original, v);
-          }}
-        >
-          <Badge variant="outline" className="sqf-badge-indigo">
-            {current}
-          </Badge>
-        </EditablePill>
-      );
-    },
+    size: 190,
+    // Selección MÚLTIPLE: una misma persona puede ser Trainer y Nutri a la vez,
+    // y hasta ahora elegir uno borraba el otro.
+    cell: ({ row }) => (
+      <CeldaEditableMultiple
+        valores={rolesDeEmpleado(row.original)}
+        opciones={OPCIONES_ROL_EMPLEADO}
+        vacio="Sin rol"
+        onGuardar={(roles) => handlers.onChangeRoles?.(row.original, roles as RolEmpleado[]) ?? Promise.resolve()}
+      />
+    ),
   },
   {
     accessorKey: "status",
@@ -221,7 +201,7 @@ export const getEntrenadoresColumns = (handlers: ColumnHandlers = {}): ColumnDef
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Acciones</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => navigator.clipboard.writeText(entrenador.id)}>
-                Copiar ID del entrenador
+                Copiar ID del empleado
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handlers.onView?.(entrenador)}>
@@ -251,7 +231,7 @@ export const getEntrenadoresColumns = (handlers: ColumnHandlers = {}): ColumnDef
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600" onClick={() => handlers.onDelete?.(entrenador)}>
                 <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar entrenador
+                Eliminar empleado
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

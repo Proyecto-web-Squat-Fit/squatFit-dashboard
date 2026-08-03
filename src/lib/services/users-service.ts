@@ -37,7 +37,10 @@ export interface UpdateUserDto {
   birth?: string;
   description?: string;
   profile_picture?: string;
-  /** Rol formal del staff (página Equipo): Nutri, Trainer, Psicóloga, Soporte, Ventas, Admin */
+  /**
+   * Roles formales del staff (pestaña Empleados), separados por comas cuando la
+   * persona tiene varios. La lista cerrada vive en `@/lib/roles-empleado`.
+   */
   staff_role?: string;
 }
 
@@ -316,6 +319,65 @@ export class UsersService {
     } catch (error) {
       console.error("❌ UsersService: Error actualizando usuario:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Datos completos del usuario que tiene la sesión abierta.
+   * Endpoint: GET /api/v1/user/info (lo saca del propio token, sin parámetros).
+   *
+   * Hace falta porque el token del back office solo trae nombre, email y rol, y
+   * la página Perfil tiene que poder enseñar y editar también el teléfono, la
+   * fecha de nacimiento, la descripción y la foto.
+   */
+  static async getMiPerfil(): Promise<UserDetailResponse> {
+    return await this.makeRequest<UserDetailResponse>("/api/v1/user/info");
+  }
+
+  /**
+   * Sube una foto de perfil desde el ordenador y la guarda en el usuario.
+   * Endpoint: PUT /api/v1/user/update?user_id=… (multipart, campo `file`).
+   *
+   * Es la subida a GCS que ya tiene el backend para las fotos de perfil
+   * (`CloudStorageService.uploadFile('profile_picture', …)`), la misma que usa
+   * la app de cliente; devuelve el usuario con la URL pública ya guardada. Las
+   * portadas de libros y cursos usan sus propios endpoints porque cada una
+   * escribe en su tabla, así que aquí no valían.
+   *
+   * Este endpoint NO acepta `staff_role` ni el rol del sistema (el DTO del
+   * backend no los tiene y la validación global rechaza lo que no esté
+   * declarado), así que por aquí nadie puede ascenderse a sí mismo.
+   */
+  static async subirFotoPerfil(userId: string, file: File): Promise<UserDetailResponse> {
+    if (!userId) throw new Error("ID de usuario requerido");
+
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const controller = new AbortController();
+    // Más margen que el resto de peticiones: aquí viaja una imagen.
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/update?user_id=${encodeURIComponent(userId)}`, {
+        method: "PUT",
+        // Sin `Content-Type`: lo pone el navegador con el `boundary` del
+        // multipart. Si se fija a mano, el backend no encuentra el archivo.
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        await this.handleResponseError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      this.handleRequestError(error, timeoutId);
     }
   }
 
