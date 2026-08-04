@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { Bell, ClipboardList, CreditCard, ShoppingBag, UserPlus } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, ClipboardList, CreditCard, ShoppingBag, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +28,17 @@ import { cn } from "@/lib/utils";
 const SOUND_PREF_KEY = "sf-notifications-sound";
 const BROWSER_PREF_KEY = "sf-notifications-browser";
 
+// Un icono por tipo del backend. Antes había cuatro con nombres que el backend
+// no usa nunca, así que TODO caía en el de lead nuevo: un pago, una renovación
+// vencida y un lead se veían igual. `Record` completo a propósito — si mañana
+// se añade un tipo, esto deja de compilar en vez de pintar un hueco.
 const TYPE_ICON: Record<NotificationType, typeof Bell> = {
-  lead_new: UserPlus,
-  payment: CreditCard,
-  precall_form: ClipboardList,
-  sequra_order: ShoppingBag,
+  lead_nuevo: UserPlus,
+  pago: CreditCard,
+  form: ClipboardList,
+  sequra: ShoppingBag,
+  renovacion: CalendarClock,
+  checkout_caido: AlertTriangle,
 };
 
 function readPref(key: string): boolean {
