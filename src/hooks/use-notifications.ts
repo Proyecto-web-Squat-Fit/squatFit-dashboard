@@ -15,16 +15,16 @@ export function useNotifications() {
   });
 }
 
-/** Marca notificaciones como leídas (todas si no se pasan ids) con actualización optimista. */
+/** Marca una notificación como leída (o todas si no se pasa id) con actualización optimista. */
 export function useMarkNotificationsRead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ids?: string[]) => NotificationsService.markRead(ids),
-    onMutate: async (ids) => {
+    mutationFn: (id?: string) => NotificationsService.markRead(id),
+    onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEY });
       const previous = queryClient.getQueryData<AdminNotification[]>(QUERY_KEY);
       queryClient.setQueryData<AdminNotification[]>(QUERY_KEY, (old) =>
-        (old ?? []).map((n) => (!ids || ids.includes(n.id) ? { ...n, read: true } : n)),
+        (old ?? []).map((n) => (!id || n.id === id ? { ...n, read: true } : n)),
       );
       return { previous };
     },
