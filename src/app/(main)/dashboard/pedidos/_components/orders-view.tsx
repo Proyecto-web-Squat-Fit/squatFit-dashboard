@@ -249,14 +249,14 @@ export function OrdersView() {
     }
   };
 
-  const aLaPapelera = () => accionEnLote(OrdersService.bulkTrash);
-  const restaurar = () => accionEnLote(OrdersService.bulkRestore);
+  const aLaPapelera = () => accionEnLote((ids) => OrdersService.bulkTrash(ids));
+  const restaurar = () => accionEnLote((ids) => OrdersService.bulkRestore(ids));
   const borrarDefinitivo = () => {
     // Confirmación explícita: esto sí es irreversible, a diferencia de la papelera.
     const n = seleccionados.length;
     if (!window.confirm(`Vas a borrar ${n} pedido${n > 1 ? "s" : ""} DEFINITIVAMENTE. No se puede deshacer. ¿Seguro?`))
       return;
-    return accionEnLote(OrdersService.bulkDelete);
+    return accionEnLote((ids) => OrdersService.bulkDelete(ids));
   };
 
   const exportar = (fmt: "csv" | "xlsx" | "pdf") => {
