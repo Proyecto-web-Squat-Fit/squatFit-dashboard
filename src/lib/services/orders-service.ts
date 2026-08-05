@@ -174,7 +174,14 @@ export interface Order {
 export interface OrdersListResult {
   orders: Order[];
   total: number;
+  /** Lo que hay ahora en la tabla, sin la papelera: cuadra con las filas. */
   counts: Record<string, number>;
+  /**
+   * El histórico, papelera incluida. Es el número entre paréntesis de cada
+   * pestaña. Vacío mientras el backend que lo devuelve no esté desplegado, y en
+   * ese caso el paréntesis sencillamente no se pinta.
+   */
+  countsHistoric: Record<string, number>;
 }
 
 export interface OrdersQuery {
@@ -467,6 +474,7 @@ export class OrdersService {
       orders: rows.map(normalizeOrder),
       total: Number(data?.total) || rows.length,
       counts: data?.counts ?? {},
+      countsHistoric: data?.countsHistoric ?? {},
     };
   }
 
