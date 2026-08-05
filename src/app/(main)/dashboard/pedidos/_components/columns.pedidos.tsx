@@ -325,7 +325,7 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
       id: "total",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
       meta: { label: "Total" } satisfies MetaColumna,
-      size: 140,
+      size: 110,
       cell: ({ row }) => {
         const { total, currency, refundedAmount } = row.original;
         const devuelto = refundedAmount ?? 0;
@@ -345,12 +345,15 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
         // Con algo devuelto se enseñan las dos cifras: lo que se cobró (tachado)
         // y lo que queda vivo. Sin esto no había forma de saber cuánto se le ha
         // devuelto ya a un cliente sin entrar a Stripe.
+        //
+        // Van APILADAS, no en la misma línea: dos importes uno al lado del otro
+        // obligaban a ensanchar la columna y le robaban sitio a toda la tabla.
+        // El resto va pequeño y en gris porque es el dato secundario — lo que
+        // se busca de un vistazo al recorrer la columna es lo que se cobró.
         return (
-          <span className="whitespace-nowrap tabular-nums">
-            <span className="text-muted-foreground line-through">{formatearImporte(total, currency)}</span>{" "}
-            <span className={restante === 0 ? "text-muted-foreground" : "font-medium"}>
-              {formatearImporte(restante, currency)}
-            </span>
+          <span className="flex flex-col leading-tight tabular-nums">
+            <span className="text-muted-foreground line-through">{formatearImporte(total, currency)}</span>
+            <span className="text-muted-foreground text-xs">{formatearImporte(restante, currency)}</span>
           </span>
         );
       },
