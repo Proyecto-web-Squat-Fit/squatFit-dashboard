@@ -101,7 +101,12 @@ export function BrandTabs({ tabs, active, onChange, className }: BrandTabsProps)
               onClick={handleTab(tab.id)}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2 border-b-[3px] px-2 py-2.5 text-xs whitespace-nowrap transition-colors sm:px-4 sm:py-3 sm:text-base",
+                // `sm:text-sm`, no `text-base`: en el back office las pestañas
+                // llevan contador («Pendiente · 12») y son hasta siete, así que
+                // a 16 px se comían el ancho y saltaba el deslizador con la
+                // ventana entera disponible. En móvil se queda en `text-xs`,
+                // que ya era el mínimo legible.
+                "flex items-center gap-2 border-b-[3px] px-2 py-2.5 text-xs whitespace-nowrap transition-colors sm:px-4 sm:py-3 sm:text-sm",
                 isActive
                   ? "border-[#FF690B] font-bold text-[#FF690B]"
                   : "border-transparent font-semibold text-[#3932C0] hover:text-[#FF690B] dark:text-indigo-300",
