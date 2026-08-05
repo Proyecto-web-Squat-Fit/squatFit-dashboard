@@ -314,6 +314,7 @@ export function OrdersView() {
         onOpenChange={(o) => !o && setRefundOrder(null)}
         orderId={refundOrder?.id ?? ""}
         orderRef={refundOrder ? `#${refundOrder.id.slice(0, 8)}` : undefined}
+        orderTotal={refundOrder?.total}
         onRefunded={() => setRefundOrder(null)}
       />
     </div>
