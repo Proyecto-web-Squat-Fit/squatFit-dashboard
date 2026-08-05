@@ -9,6 +9,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Download, Eye, IdCard, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 
+import { BrandTabs } from "@/components/brand-tabs";
 import { BulkActionsBar } from "@/components/data-table/bulk-actions-bar";
 import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTable } from "@/components/data-table/data-table";
@@ -17,7 +18,7 @@ import { DataTableViewOptions } from "@/components/data-table/data-table-view-op
 import { EditUserModal } from "@/components/modals/edit-user-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -349,26 +350,21 @@ export function UsuariosDirectoryTable() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-2xl text-[#363C98]">Usuarios</CardTitle>
-          <CardDescription>
-            <span className="flex flex-wrap items-center gap-1 pt-1 text-sm">
-              {TABS.map((t, idx) => (
-                <span key={t.key} className="flex items-center gap-1">
-                  {idx > 0 && <span className="text-muted-foreground px-1">|</span>}
-                  <button
-                    type="button"
-                    onClick={() => setTab(t.key)}
-                    className={
-                      tab === t.key ? "font-semibold text-[#FF690B]" : "font-medium text-[#363C98] hover:underline"
-                    }
-                  >
-                    {t.label}
-                    {tabCount(t.key) !== null && ` (${tabCount(t.key)})`}
-                  </button>
-                </span>
-              ))}
-            </span>
-          </CardDescription>
         </CardHeader>
+        {/* Submenú de marca, el único formato de submenú del panel. Aquí había
+            pestañas de texto separadas por barras verticales («Todos | Admin |
+            …»): un formato que no existe en ninguna otra pantalla y que además
+            no se distingue de un texto normal hasta que lo pulsas. */}
+        <div className="px-6">
+          <BrandTabs
+            tabs={TABS.map((t) => ({
+              id: t.key,
+              label: tabCount(t.key) !== null ? `${t.label} · ${tabCount(t.key)}` : t.label,
+            }))}
+            active={tab}
+            onChange={(id) => setTab(id as UsuariosTab)}
+          />
+        </div>
         <CardContent className="space-y-4">
           <BulkActionsBar selectedCount={selected.length} onApply={onApplyBulk} actions={bulkActions} />
 
