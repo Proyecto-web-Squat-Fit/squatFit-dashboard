@@ -148,6 +148,7 @@ export function OrdersView() {
 
   const orders = useMemo(() => data?.orders ?? [], [data]);
   const counts = data?.counts ?? {};
+  const countsHistoric = data?.countsHistoric ?? {};
 
   // El GET /admin-panel/orders (QueryOrdersDTO, forbidNonWhitelisted) SOLO
   // acepta status/search/limit, así que Categoría y Encargado se filtran EN
@@ -170,14 +171,24 @@ export function OrdersView() {
   // Mantener el pedido abierto sincronizado con los datos frescos.
   const openOrder = selected ? (orders.find((o) => o.id === selected.id) ?? selected) : null;
 
+  // «Pendiente · 12 (48)»: 12 es lo que hay ahora en la tabla y 48 el histórico
+  // con la papelera dentro. Los dos números hacen falta desde que existe la
+  // papelera: sin el paréntesis, borrar pedidos hace bajar el contador y
+  // desaparece la única señal de que esos pedidos existieron —«¿cuántos
+  // reembolsos llevamos?» dejaría de tener respuesta en cuanto alguien limpie
+  // la lista—. El paréntesis solo se pinta cuando aporta algo: si los dos
+  // números coinciden, repetirlo es ruido.
   const tabs = useMemo(
     () =>
       STATUS_TABS.map((t) => {
         const label = t.id === "all" ? "Todos" : t.id === "trash" ? "Papelera" : ORDER_STATUS_META[t.id].label;
         const n = counts[t.countKey];
-        return { id: t.id, label: typeof n === "number" ? `${label} · ${n}` : label };
+        if (typeof n !== "number") return { id: t.id, label };
+        const historico = countsHistoric[t.countKey];
+        const hayHistorico = typeof historico === "number" && historico > n;
+        return { id: t.id, label: hayHistorico ? `${label} · ${n} (${historico})` : `${label} · ${n}` };
       }),
-    [counts],
+    [counts, countsHistoric],
   );
 
   const columns = useMemo(
