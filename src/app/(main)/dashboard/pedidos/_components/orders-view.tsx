@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { Download, Search } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Download, Search, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandTabs } from "@/components/brand-tabs";
@@ -28,6 +29,7 @@ import { useCatalogProducts } from "@/hooks/use-products-catalog";
 import { exportCSV, exportPDF, exportXLSX, type ExportColumn } from "@/lib/export/table-export";
 import {
   ORDER_STATUS_META,
+  OrdersService,
   PAYMENT_METHOD_LABEL,
   formatOrderPrice,
   itemsSummary,
@@ -51,7 +53,9 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 /** Pestañas: Todos + los estados del diseño (con «Enviado»), con contador. */
-const STATUS_TABS: { id: OrderStatus | "all"; countKey: string }[] = [
+type TabPedidos = OrderStatus | "all" | "trash";
+
+const STATUS_TABS: { id: TabPedidos; countKey: string }[] = [
   { id: "all", countKey: "all" },
   { id: "pending", countKey: "pending" },
   { id: "processing", countKey: "processing" },
@@ -59,6 +63,8 @@ const STATUS_TABS: { id: OrderStatus | "all"; countKey: string }[] = [
   { id: "completed", countKey: "completed" },
   { id: "refunded", countKey: "refunded" },
   { id: "cancelled", countKey: "cancelled" },
+  // Al final y aparte: es una vista distinta, no un estado más del pedido.
+  { id: "trash", countKey: "trash" },
 ];
 
 // ─── Filtro «Categoría» (del producto) ───────────────────────────────────────
@@ -119,7 +125,7 @@ const EXPORT_COLUMNS: ExportColumn<Order>[] = [
 ];
 
 export function OrdersView() {
-  const [tab, setTab] = useState<OrderStatus | "all">("all");
+  const [tab, setTab] = useState<TabPedidos>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -167,7 +173,7 @@ export function OrdersView() {
   const tabs = useMemo(
     () =>
       STATUS_TABS.map((t) => {
-        const label = t.id === "all" ? "Todos" : ORDER_STATUS_META[t.id].label;
+        const label = t.id === "all" ? "Todos" : t.id === "trash" ? "Papelera" : ORDER_STATUS_META[t.id].label;
         const n = counts[t.countKey];
         return { id: t.id, label: typeof n === "number" ? `${label} · ${n}` : label };
       }),
@@ -221,6 +227,38 @@ export function OrdersView() {
 
   const seleccionados = table.getSelectedRowModel().rows.map((r) => r.original);
 
+  const queryClient = useQueryClient();
+  const [enLote, setEnLote] = useState(false);
+
+  /**
+   * Ejecuta una acción de lote y refresca. Los errores del backend se enseñan
+   * tal cual: el de «no se puede borrar un pedido con factura» nombra los
+   * pedidos concretos, y resumirlo a «error» dejaría al gestor sin saber cuál.
+   */
+  const accionEnLote = async (fn: (ids: string[]) => Promise<{ message: string }>) => {
+    setEnLote(true);
+    try {
+      const { message } = await fn(seleccionados.map((o) => o.id));
+      toast.success(message);
+      table.resetRowSelection();
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo completar la acción");
+    } finally {
+      setEnLote(false);
+    }
+  };
+
+  const aLaPapelera = () => accionEnLote(OrdersService.bulkTrash);
+  const restaurar = () => accionEnLote(OrdersService.bulkRestore);
+  const borrarDefinitivo = () => {
+    // Confirmación explícita: esto sí es irreversible, a diferencia de la papelera.
+    const n = seleccionados.length;
+    if (!window.confirm(`Vas a borrar ${n} pedido${n > 1 ? "s" : ""} DEFINITIVAMENTE. No se puede deshacer. ¿Seguro?`))
+      return;
+    return accionEnLote(OrdersService.bulkDelete);
+  };
+
   const exportar = (fmt: "csv" | "xlsx" | "pdf") => {
     // Lo seleccionado si hay algo marcado; si no, todo lo que se está viendo.
     const filas = seleccionados.length ? seleccionados : visibleOrders;
@@ -263,6 +301,32 @@ export function OrdersView() {
             <DropdownMenuItem onClick={() => exportar("pdf")}>PDF</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {/* Acciones en LOTE: solo con filas marcadas, y el juego depende de si
+            estás en la papelera o en la lista normal. */}
+        {seleccionados.length > 0 &&
+          (tab === "trash" ? (
+            <>
+              <Button variant="outline" size="sm" className="h-8 gap-1" onClick={restaurar} disabled={enLote}>
+                <Undo2 className="size-4" />
+                Restaurar ({seleccionados.length})
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 gap-1"
+                onClick={borrarDefinitivo}
+                disabled={enLote}
+              >
+                <Trash2 className="size-4" />
+                Borrar
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" size="sm" className="h-8 gap-1" onClick={aLaPapelera} disabled={enLote}>
+              <Trash2 className="size-4" />
+              Mover a la papelera ({seleccionados.length})
+            </Button>
+          ))}
         <DataTableViewOptions table={table} />
       </div>
 
@@ -278,7 +342,7 @@ export function OrdersView() {
         <FilterChips label="Factura" options={INVOICE_FILTER_OPTIONS} selected={facturaSel} onChange={setFacturaSel} />
       </div>
 
-      <BrandTabs tabs={tabs} active={tab} onChange={(id) => setTab(id as OrderStatus | "all")} />
+      <BrandTabs tabs={tabs} active={tab} onChange={(id) => setTab(id as TabPedidos)} />
 
       {isLoading ? (
         <div className="space-y-2">

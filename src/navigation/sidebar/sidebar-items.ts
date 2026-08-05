@@ -1,27 +1,28 @@
 import {
-  MessageSquare,
-  Users,
-  BadgeCheck,
-  LayoutDashboard,
-  GraduationCap,
-  ShoppingCart,
-  Package,
-  UtensilsCrossed,
   Apple,
-  ChefHat,
-  FileText,
-  TrendingUp,
-  Dumbbell,
-  Contact,
-  BadgePercent,
   ArrowLeftRight,
-  TicketPercent,
-  Megaphone,
+  BadgeCheck,
+  BadgePercent,
   CalendarCheck,
-  FolderOpen,
-  Settings,
+  ChefHat,
+  Contact,
   CookingPot,
+  Dumbbell,
+  FileText,
+  FolderOpen,
+  GraduationCap,
+  LayoutDashboard,
+  Megaphone,
+  MessageSquare,
+  Package,
+  Settings,
+  ShieldCheck,
+  ShoppingCart,
+  TicketPercent,
+  TrendingUp,
   type LucideIcon,
+  Users,
+  UtensilsCrossed,
 } from "lucide-react";
 
 export interface NavSubItem {
@@ -130,6 +131,11 @@ export const sidebarItems: NavGroup[] = [
         subItems: [
           { title: "Clientes", url: "/dashboard/usuarios?tab=clientes", icon: Users },
           { title: "Empleados", url: "/dashboard/usuarios?tab=empleados", icon: BadgeCheck },
+          // Permisos existía como pestaña dentro de la vista, pero no en el
+          // menú: solo se llegaba entrando a Usuarios y mirando las pestañas de
+          // arriba. No hace falta gating propio — el item Usuarios ya es
+          // `roles: ADMIN`, y la vista vuelve a comprobarlo por su cuenta.
+          { title: "Permisos", url: "/dashboard/usuarios?tab=permisos", icon: ShieldCheck },
         ],
       },
     ],

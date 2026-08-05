@@ -178,7 +178,8 @@ export interface OrdersListResult {
 }
 
 export interface OrdersQuery {
-  status?: OrderStatus | "all";
+  /** «trash» no es un estado del pedido: es la vista de la papelera. */
+  status?: OrderStatus | "all" | "trash";
   search?: string;
 }
 
@@ -451,7 +452,10 @@ export class OrdersService {
   static async list(query?: OrdersQuery): Promise<OrdersListResult> {
     // Solo params del QueryOrdersDTO (forbidNonWhitelisted): status, search, limit.
     const params = new URLSearchParams();
-    if (query?.status && query.status !== "all") params.set("status", query.status);
+    // «Papelera» no es un estado más: es una vista aparte del backend, así que
+    // va por su propio parámetro y no por `status`.
+    if (query?.status === "trash") params.set("trash", "true");
+    else if (query?.status && query.status !== "all") params.set("status", query.status);
     if (query?.search) params.set("search", query.search);
     params.set("limit", "200");
     const qs = params.toString();
@@ -464,6 +468,46 @@ export class OrdersService {
       total: Number(data?.total) || rows.length,
       counts: data?.counts ?? {},
     };
+  }
+
+  /**
+   * Manda pedidos a la papelera. Borrado blando: los esconde del listado y se
+   * pueden restaurar; nada se pierde.
+   */
+  static async bulkTrash(orderIds: string[]): Promise<{ message: string }> {
+    return this.bulkAction("bulk-trash", orderIds);
+  }
+
+  /** Los devuelve a la lista. */
+  static async bulkRestore(orderIds: string[]): Promise<{ message: string }> {
+    return this.bulkAction("bulk-restore", orderIds);
+  }
+
+  /**
+   * Borrado DEFINITIVO, solo desde la papelera. El backend rechaza el lote
+   * entero si alguno tiene factura emitida (obligación fiscal) y dice cuáles.
+   */
+  static async bulkDelete(orderIds: string[]): Promise<{ message: string }> {
+    return this.bulkAction("bulk-delete", orderIds);
+  }
+
+  private static async bulkAction(accion: string, orderIds: string[]): Promise<{ message: string }> {
+    if (!orderIds.length) throw new Error("No has seleccionado ningún pedido.");
+    const res = await fetch(`${API_BASE_URL}/api/v1/admin-panel/orders/${accion}`, {
+      method: "POST",
+      headers: this.authHeaders(),
+      body: JSON.stringify({ order_ids: orderIds }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT),
+    });
+    if (res.status === 401) {
+      handleUnauthorized();
+      throw new Error("Sesión caducada");
+    }
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.message ?? payload.error ?? `Error ${res.status}`);
+    }
+    return res.json().catch(() => ({ message: "Hecho" }));
   }
 
   static async getById(id: string): Promise<Order> {
