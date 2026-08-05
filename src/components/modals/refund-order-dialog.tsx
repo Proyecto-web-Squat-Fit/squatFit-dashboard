@@ -30,6 +30,8 @@ interface RefundOrderDialogProps {
   orderRef?: string;
   /** Total pagado, en euros. Sin él solo se puede reembolsar el importe completo. */
   orderTotal?: number;
+  /** Ya devuelto de este pedido, en euros. El tope es lo que quede pendiente. */
+  orderRefunded?: number;
   /** Callback tras un reembolso correcto (p. ej. refrescar la fila). */
   onRefunded?: () => void;
 }
@@ -48,6 +50,7 @@ export function RefundOrderDialog({
   orderId,
   orderRef,
   orderTotal,
+  orderRefunded = 0,
   onRefunded,
 }: RefundOrderDialogProps) {
   const queryClient = useQueryClient();
@@ -60,9 +63,13 @@ export function RefundOrderDialog({
   // Sin total conocido no se puede validar el tope, así que solo se ofrece el
   // reembolso completo: es preferible perder la opción a mandar a Stripe un
   // importe que no sabemos si cabe en el cobro.
-  const puedeSerParcial = typeof orderTotal === "number" && orderTotal > 0;
+  //
+  // Y el tope NO es el total del pedido, es lo que QUEDA por devolver: a un
+  // pedido con 40 € ya reembolsados no se le pueden devolver otros 80.
+  const pendiente = Number(((orderTotal ?? 0) - orderRefunded).toFixed(2));
+  const puedeSerParcial = typeof orderTotal === "number" && pendiente > 0;
   const importeNum = Number(importe.replace(",", "."));
-  const importeValido = !parcial || (Number.isFinite(importeNum) && importeNum > 0 && importeNum <= (orderTotal ?? 0));
+  const importeValido = !parcial || (Number.isFinite(importeNum) && importeNum > 0 && importeNum <= pendiente);
 
   const reset = () => {
     setReason("");
@@ -78,7 +85,7 @@ export function RefundOrderDialog({
       return;
     }
     if (parcial && !importeValido) {
-      toast.error(`El importe debe estar entre 0 y ${eur(orderTotal ?? 0)}.`);
+      toast.error(`El importe debe estar entre 0 y ${eur(pendiente)}.`);
       return;
     }
     setSubmitting(true);
@@ -147,6 +154,12 @@ export function RefundOrderDialog({
           {puedeSerParcial && (
             <div className="space-y-2">
               <Label>Importe</Label>
+              {orderRefunded > 0 && (
+                <p className="text-muted-foreground text-xs">
+                  De los {eur(orderTotal)} de este pedido ya se devolvieron <strong>{eur(orderRefunded)}</strong>.
+                  Quedan {eur(pendiente)}.
+                </p>
+              )}
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -154,7 +167,7 @@ export function RefundOrderDialog({
                   className="flex-1"
                   onClick={() => setParcial(false)}
                 >
-                  Todo ({eur(orderTotal)})
+                  Todo ({eur(pendiente)})
                 </Button>
                 <Button
                   type="button"
@@ -183,12 +196,12 @@ export function RefundOrderDialog({
                     <button
                       type="button"
                       className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
-                      onClick={() => setImporte((orderTotal / 2).toFixed(2).replace(".", ","))}
+                      onClick={() => setImporte((pendiente / 2).toFixed(2).replace(".", ","))}
                     >
-                      Mitad ({eur(orderTotal / 2)})
+                      Mitad ({eur(pendiente / 2)})
                     </button>
                     {importe && !importeValido && (
-                      <span className="text-destructive text-xs">Máximo {eur(orderTotal)}</span>
+                      <span className="text-destructive text-xs">Máximo {eur(pendiente)}</span>
                     )}
                   </div>
                 </div>

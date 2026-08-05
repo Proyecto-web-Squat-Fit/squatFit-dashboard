@@ -114,23 +114,43 @@ function textoPagoVacio(estado: OrderStatus): string {
 }
 
 /** Iconos de acción por fila; el set depende del estado del pedido. */
+/**
+ * Acciones por fila. Los botones van un 5 % por debajo del tamaño estándar y
+ * sin separación: son cinco iconos y la columna se comía el ancho de la tabla.
+ */
+const BOTON_ACCION = "size-[2.14rem]";
+const ICONO_ACCION = "size-[0.95rem]";
+
 function AccionesFila({ order, acciones }: { order: Order; acciones: AccionesPedido }) {
   const puedeCompletar = order.status === "pending" || order.status === "processing" || order.status === "shipped";
-  // «Reembolsar» solo donde hay algo que devolver: en un pendiente no se ha
-  // cobrado nada todavía.
-  const puedeReembolsar = order.status === "completed" || order.status === "processing" || order.status === "shipped";
+  const devuelto = order.refundedAmount ?? 0;
+  const pendienteDeDevolver = Number((order.total - devuelto).toFixed(2));
+  // «Reembolsar» mientras quede saldo. Antes bastaba con que el estado fuera
+  // uno de los cobrados, así que tras un reembolso PARCIAL el botón desaparecía
+  // y no había forma de devolver el resto desde el panel. Lo que manda es el
+  // dinero pendiente, no la etiqueta del pedido; en un pendiente no se ha
+  // cobrado nada todavía, y por eso ese estado sigue fuera.
+  const puedeReembolsar =
+    (order.status === "completed" || order.status === "processing" || order.status === "shipped") &&
+    pendienteDeDevolver > 0;
   const completando = acciones.completando(order.id);
   const enviando = acciones.enviandoEmail(order.id);
 
   return (
-    <div className="flex items-center justify-end gap-0.5">
-      <Button variant="ghost" size="icon" onClick={() => acciones.onVer(order)} title="Ver pedido">
-        <Eye className="size-4" />
+    <div className="flex items-center justify-end gap-0">
+      <Button
+        variant="ghost"
+        size="icon"
+        className={BOTON_ACCION}
+        onClick={() => acciones.onVer(order)}
+        title="Ver pedido"
+      >
+        <Eye className={ICONO_ACCION} />
       </Button>
       {order.userId && (
-        <Button asChild variant="ghost" size="icon" title="Ficha del cliente">
+        <Button asChild variant="ghost" size="icon" className={BOTON_ACCION} title="Ficha del cliente">
           <Link href={`/dashboard/alumnos/${order.userId}`}>
-            <User className="size-4" />
+            <User className={ICONO_ACCION} />
           </Link>
         </Button>
       )}
@@ -138,35 +158,37 @@ function AccionesFila({ order, acciones }: { order: Order; acciones: AccionesPed
         <Button
           variant="ghost"
           size="icon"
+          className={BOTON_ACCION}
           onClick={() => acciones.onCompletar(order)}
           disabled={completando}
           title="Marcar como completado"
         >
           {completando ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className={`${ICONO_ACCION} animate-spin`} />
           ) : (
-            <CheckCircle2 className="size-4 text-green-600" />
+            <CheckCircle2 className={`${ICONO_ACCION} text-green-600`} />
           )}
         </Button>
       )}
       <Button
         variant="ghost"
         size="icon"
+        className={BOTON_ACCION}
         onClick={() => acciones.onEmail(order)}
         disabled={enviando}
         title="Enviar email de estado"
       >
-        {enviando ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+        {enviando ? <Loader2 className={`${ICONO_ACCION} animate-spin`} /> : <Mail className={ICONO_ACCION} />}
       </Button>
       {puedeReembolsar && (
         <Button
           variant="ghost"
           size="icon"
-          className="text-rose-600"
+          className={`${BOTON_ACCION} text-rose-600`}
           onClick={() => acciones.onReembolsar(order)}
-          title="Reembolsar"
+          title={devuelto > 0 ? `Reembolsar (quedan ${pendienteDeDevolver.toFixed(2)} €)` : "Reembolsar"}
         >
-          <Undo2 className="size-4" />
+          <Undo2 className={ICONO_ACCION} />
         </Button>
       )}
     </div>
@@ -303,13 +325,32 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
       id: "total",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
       meta: { label: "Total" } satisfies MetaColumna,
-      size: 110,
+      size: 140,
       cell: ({ row }) => {
+        const { total, currency, refundedAmount } = row.original;
+        const devuelto = refundedAmount ?? 0;
         // Devuelto y cancelado van tachados: el importe existió pero ya no cuenta.
-        const tachado = ORDER_STATUS_META[row.original.status].struck;
+        const tachado = ORDER_STATUS_META[row.original.status].struck || devuelto > 0;
+        // Medio céntimo de tolerancia: comparar decimales exactos deja pedidos
+        // devueltos al 100 % mostrando un resto de 0,00 € como si quedara algo.
+        const restante = Math.max(0, Number((total - devuelto).toFixed(2)));
+
+        if (devuelto <= 0) {
+          return (
+            <span className={`tabular-nums ${tachado ? "text-muted-foreground line-through" : ""}`}>
+              {formatearImporte(total, currency)}
+            </span>
+          );
+        }
+        // Con algo devuelto se enseñan las dos cifras: lo que se cobró (tachado)
+        // y lo que queda vivo. Sin esto no había forma de saber cuánto se le ha
+        // devuelto ya a un cliente sin entrar a Stripe.
         return (
-          <span className={`tabular-nums ${tachado ? "text-muted-foreground line-through" : ""}`}>
-            {formatearImporte(row.original.total, row.original.currency)}
+          <span className="whitespace-nowrap tabular-nums">
+            <span className="text-muted-foreground line-through">{formatearImporte(total, currency)}</span>{" "}
+            <span className={restante === 0 ? "text-muted-foreground" : "font-medium"}>
+              {formatearImporte(restante, currency)}
+            </span>
           </span>
         );
       },
@@ -329,7 +370,7 @@ export function construirColumnasPedidos(acciones: AccionesPedido): ColumnDef<Or
       header: () => <span className="sr-only">Acciones</span>,
       enableSorting: false,
       enableHiding: false,
-      size: 180,
+      size: 160,
       cell: ({ row }) => <AccionesFila order={row.original} acciones={acciones} />,
     },
   ];
