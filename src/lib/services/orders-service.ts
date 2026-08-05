@@ -154,6 +154,8 @@ export interface Order {
   origin: string | null;
   refundReason: string | null;
   refundNote: string | null;
+  /** Acumulado ya devuelto de este pedido, en euros. */
+  refundedAmount: number;
   shippingAddress: Record<string, unknown> | null;
   stripePaymentIntentId: string | null;
   // `has_invoice`/`invoice_number` los añade el backend en el PR #87 (SquatFit),
@@ -398,6 +400,7 @@ export function normalizeOrder(raw: any): Order {
     currency: (raw.currency ?? "eur").toLowerCase(),
     paymentMethod: normalizePayment(raw.payment_method),
     origin: raw.origin ?? null,
+    refundedAmount: toNumber(raw.refunded_amount ?? 0),
     refundReason: raw.refund_reason ?? null,
     refundNote: raw.refund_note ?? null,
     shippingAddress: raw.shipping_address ?? null,
