@@ -120,17 +120,23 @@ export function NotificationsBell() {
     localStorage.setItem(BROWSER_PREF_KEY, on ? "1" : "0");
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (open && unread.length > 0) markRead.mutate(undefined);
-  };
-
+  // ABRIR LA CAMPANA YA NO MARCA NADA.
+  //
+  // Antes esto era `onOpenChange={(open) => { if (open && unread.length) markRead.mutate(undefined) }}`,
+  // y el estado leído lo comparte TODO el staff. O sea que cualquiera que
+  // desplegase la campana por curiosidad le vaciaba la cola de trabajo al
+  // equipo entero, sin querer y sin poder deshacerlo. Con 120 avisos de
+  // renovación pendientes, eso no es un aviso: es perder la lista.
+  //
+  // Entre las dos opciones, la que no puede destruir información gana: se
+  // marca lo que se pulsa, y para marcarlas todas hay un botón explícito.
   const handleItemClick = (n: AdminNotification) => {
-    if (!n.read) markRead.mutate([n.id]);
+    if (!n.read) markRead.mutate(n.id);
     router.push(n.href);
   };
 
   return (
-    <DropdownMenu onOpenChange={handleOpenChange}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           size="icon"
@@ -147,12 +153,27 @@ export function NotificationsBell() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0">
-        <DropdownMenuLabel className="flex items-center justify-between px-3 py-2">
-          <span>Notificaciones</span>
+        <DropdownMenuLabel className="flex items-center justify-between gap-2 px-3 py-2">
+          <span>Notificaciones{unread.length > 0 && ` (${unread.length} sin leer)`}</span>
           {!NOTIFICATIONS_API_READY && (
             <span className="text-muted-foreground text-[10px] font-normal">Datos de ejemplo · Fase 9</span>
           )}
         </DropdownMenuLabel>
+        {unread.length > 0 && (
+          <div className="px-3 pb-2">
+            {/* El aviso no es decorativo: el backend comparte el estado leído
+                entre todo el staff, así que esto se las quita a todos. */}
+            <button
+              type="button"
+              onClick={() => markRead.mutate(undefined)}
+              disabled={markRead.isPending}
+              className="text-muted-foreground hover:text-foreground text-[11px] underline underline-offset-2 disabled:opacity-50"
+              title="Se marcan para todo el equipo, no solo para ti"
+            >
+              Marcar todas como leídas (para todo el equipo)
+            </button>
+          </div>
+        )}
         <DropdownMenuSeparator className="my-0" />
         <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 && (

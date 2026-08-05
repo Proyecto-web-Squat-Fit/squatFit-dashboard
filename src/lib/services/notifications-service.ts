@@ -10,7 +10,10 @@ const REQUEST_TIMEOUT = 12000;
 // ----------------------------------------------------------------------------
 // Contrato esperado de Fase 9 (backend en paralelo — AÚN NO publicado):
 //   • GET  /api/v1/admin-panel/notifications        (últimos eventos + unread)
-//   • POST /api/v1/admin-panel/notifications/read   (marcar leídas; body opcional { ids })
+//   • POST /api/v1/admin-panel/notifications/read   (marcar leídas; body opcional { id })
+//     OJO: `id` en SINGULAR, y una sola por llamada. Aquí ponía `{ ids }` y era
+//     falso —el DTO del backend solo declara `id`—, que es de donde salió el
+//     fallo de que «marcar solo esta» no funcionara nunca.
 //
 // Sondeo 20-jul-2026: ambos responden 404 → NOTIFICATIONS_API_READY = false.
 // Mientras tanto la campana funciona con datos de ejemplo (el estado leído/no
@@ -280,18 +283,37 @@ export class NotificationsService {
     return raw.map(normalizeNotification).sort((a, b) => b.created_at.localeCompare(a.created_at));
   }
 
-  /** Marca como leídas: todas si no se pasan ids. */
-  static async markRead(ids?: string[]): Promise<void> {
+  /**
+   * Marca como leída UNA notificación, o TODAS si no se pasa id.
+   *
+   * Era `ids?: string[]` y mandaba `{ ids }`, y ese plural nunca ha funcionado:
+   * el backend acepta `{ id }` en singular (MarkStaffNotificationReadDTO, con
+   * `@IsUUID(4) id?: string`) y el ValidationPipe global va con
+   * `forbidNonWhitelisted: true`, así que un body con `ids` se rechazaba con
+   * 400 antes de llegar al handler. Como el hook hace actualización optimista,
+   * el fallo no se veía: la notificación se pintaba leída, el POST fallaba, y
+   * al siguiente sondeo volvía a aparecer sin leer.
+   *
+   * O sea que de los dos caminos, el único que llegaba a hacer algo era el
+   * destructivo —body vacío = marcar TODAS—, y el de «marca solo esta» no.
+   * Se arregla aquí, en el cliente, porque el backend ya expone lo que hace
+   * falta y así no hay que desplegar nada.
+   *
+   * OJO al usarlo: el estado leído es COMPARTIDO por todo el staff (así lo
+   * documenta el propio endpoint). Marcar todas no es «ocultármelas a mí», es
+   * vaciarle la cola al equipo entero.
+   */
+  static async markRead(id?: string): Promise<void> {
     if (!NOTIFICATIONS_API_READY) {
       getSampleStore().forEach((n) => {
-        if (!ids || ids.includes(n.id)) n.read = true;
+        if (!id || n.id === id) n.read = true;
       });
       return;
     }
     await this.request("/api/v1/admin-panel/notifications/read", {
       method: "POST",
       headers: this.authHeaders(),
-      body: JSON.stringify(ids?.length ? { ids } : {}),
+      body: JSON.stringify(id ? { id } : {}),
     });
   }
 }
