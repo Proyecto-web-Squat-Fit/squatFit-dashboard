@@ -41,6 +41,7 @@ import { avatarSrc } from "@/lib/avatar";
 import { canGrantProducts, visibleFichaSections } from "@/lib/ficha-visibility";
 
 import { ClientChatsSection } from "./client-chats-section";
+import { IbanRow } from "./iban-row";
 import { ClientProgressSection } from "./client-progress-section";
 import { StaffNotesSection } from "./staff-notes-section";
 
@@ -223,6 +224,15 @@ export function ClientProfileView({ userId }: ClientProfileViewProps) {
                   label="Rol"
                   value={user?.role ? <Badge variant="outline">{user.role}</Badge> : undefined}
                 />
+                {/* IBAN: solo el admin, y solo en fichas de gente del equipo.
+                    A los clientes se les cobra por Stripe o seQura —no se les
+                    transfiere—, así que ni se pide ni se guarda su cuenta: el
+                    dato que no existe no se puede filtrar. Las dos condiciones
+                    las vuelve a comprobar el servidor; esto es la interfaz, no
+                    la cerradura. */}
+                {role === "admin" && user?.role && user.role !== "user" && (
+                  <IbanRow userId={userId} ultimos4Iniciales={(user as any)?.iban_ultimos4} />
+                )}
                 <DataRow
                   label="Estado"
                   value={

@@ -323,6 +323,33 @@ export class UsersService {
   }
 
   /**
+   * IBAN de un colaborador — SOLO ADMIN.
+   *
+   * El número completo va por su propio endpoint y no dentro de la ficha: así
+   * pedirlo es un acto deliberado que queda en los registros del servidor, en
+   * lugar de viajar en cada apertura de ficha. Lo que sí trae la ficha es
+   * `iban_ultimos4`, para reconocer la cuenta sin descifrar nada.
+   *
+   * Esto NO ordena ni prepara pagos: el IBAN se copia y la transferencia se
+   * hace a mano desde el banco.
+   */
+  static async getIban(userId: string): Promise<string | null> {
+    const response = await this.makeRequest<{ iban: string | null }>(
+      `/api/v1/admin-panel/users/${userId}/iban`,
+    );
+    return response?.iban ?? null;
+  }
+
+  /** Guarda el IBAN (cadena vacía = borrarlo). Devuelve los 4 últimos dígitos. */
+  static async setIban(userId: string, iban: string): Promise<string | null> {
+    const response = await this.makeRequest<{ iban_ultimos4: string | null }>(
+      `/api/v1/admin-panel/users/${userId}/iban`,
+      { method: "PUT", body: JSON.stringify({ iban }) },
+    );
+    return response?.iban_ultimos4 ?? null;
+  }
+
+  /**
    * Datos completos del usuario que tiene la sesión abierta.
    * Endpoint: GET /api/v1/user/info (lo saca del propio token, sin parámetros).
    *
