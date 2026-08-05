@@ -475,12 +475,12 @@ export class OrdersService {
    * pueden restaurar; nada se pierde.
    */
   static async bulkTrash(orderIds: string[]): Promise<{ message: string }> {
-    return this.bulkAction("bulk-trash", orderIds);
+    return OrdersService.bulkAction("bulk-trash", orderIds);
   }
 
   /** Los devuelve a la lista. */
   static async bulkRestore(orderIds: string[]): Promise<{ message: string }> {
-    return this.bulkAction("bulk-restore", orderIds);
+    return OrdersService.bulkAction("bulk-restore", orderIds);
   }
 
   /**
@@ -488,14 +488,23 @@ export class OrdersService {
    * entero si alguno tiene factura emitida (obligación fiscal) y dice cuáles.
    */
   static async bulkDelete(orderIds: string[]): Promise<{ message: string }> {
-    return this.bulkAction("bulk-delete", orderIds);
+    return OrdersService.bulkAction("bulk-delete", orderIds);
   }
 
+  /**
+   * `OrdersService.` y no `this.`, a propósito.
+   *
+   * Estos tres métodos se pasan sueltos como callback —`accionEnLote(
+   * OrdersService.bulkTrash)`—, y al desreferenciarlos de la clase se pierde el
+   * `this`: la llamada reventaba con «Cannot read properties of undefined
+   * (reading 'bulkAction')» justo al pulsar el botón. Nombrando la clase, el
+   * método funciona igual lo llames como lo llames.
+   */
   private static async bulkAction(accion: string, orderIds: string[]): Promise<{ message: string }> {
     if (!orderIds.length) throw new Error("No has seleccionado ningún pedido.");
     const res = await fetch(`${API_BASE_URL}/api/v1/admin-panel/orders/${accion}`, {
       method: "POST",
-      headers: this.authHeaders(),
+      headers: OrdersService.authHeaders(),
       body: JSON.stringify({ order_ids: orderIds }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT),
     });

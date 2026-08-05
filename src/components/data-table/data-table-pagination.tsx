@@ -9,7 +9,15 @@ interface DataTablePaginationProps<TData> {
   table: Table<TData>;
 }
 
-const TAMANOS_DE_PAGINA = [10, 20, 30, 40, 50];
+/**
+ * Filas por página, norma de tablas (5-ago-2026).
+ *
+ * Antes eran 10/20/30/40/50: cuatro escalones para moverse entre 10 y 50, y
+ * ninguno por encima. Con miles de clientes o de pedidos, revisar la tabla a 50
+ * filas es paginar sin parar. Ahora los saltos son grandes de verdad y llegan a
+ * 200, que es el tope que devuelve el backend por página.
+ */
+const TAMANOS_DE_PAGINA = [25, 50, 100, 150, 200];
 
 export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
   const pageSize = table.getState().pagination.pageSize;
