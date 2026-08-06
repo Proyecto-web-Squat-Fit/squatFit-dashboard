@@ -12,7 +12,11 @@ import { API_BASE_URL } from "@/lib/services/api-base";
 // crea la cuenta y solo avisa a la campana. De ahí salen los compradores que
 // pagan y no existen en la base.
 // ============================================================================
-export const PAYMENT_LINKS_ENDPOINT = "/api/v1/admin-panel/payment-links";
+// Cuelga de `sales/` a propósito: el middleware de permisos del backend casa
+// por segmentos completos, y en la raíz no había ninguna clave candidata —
+// devolvía 403 hasta al admin (comprobado contra la revisión etiquetada antes
+// de mover el tráfico). Bajo `sales/` hereda la clave de quien vende.
+export const PAYMENT_LINKS_ENDPOINT = "/api/v1/admin-panel/sales/payment-links";
 
 export interface EnlaceDePago {
   id: string;
