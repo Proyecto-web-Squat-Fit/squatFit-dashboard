@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, UserPlus } from "lucide-react";
@@ -24,6 +24,12 @@ import { AltaClienteService } from "@/lib/services/alta-cliente-service";
 interface AltaClienteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Correo con el que abrir el formulario. Lo usa la pantalla de compradores
+   * sin cuenta: allí el correo ya se conoce —viene del cobro de Stripe— y
+   * hacer que se teclee otra vez es una oportunidad de equivocarse.
+   */
+  emailInicial?: string;
 }
 
 /**
@@ -38,9 +44,9 @@ interface AltaClienteDialogProps {
  *   1. aquí se le crea la cuenta
  *   2. en su ficha, «Asignar producto» → el programa que compró
  */
-export function AltaClienteDialog({ open, onOpenChange }: AltaClienteDialogProps) {
+export function AltaClienteDialog({ open, onOpenChange, emailInicial }: AltaClienteDialogProps) {
   const queryClient = useQueryClient();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailInicial ?? "");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [sendActivation, setSendActivation] = useState(false);
@@ -48,8 +54,13 @@ export function AltaClienteDialog({ open, onOpenChange }: AltaClienteDialogProps
 
   const emailValido = /.+@.+\..+/.test(email.trim());
 
+  // Al reabrirlo para otro comprador tiene que traer SU correo, no el anterior.
+  useEffect(() => {
+    if (open) setEmail(emailInicial ?? "");
+  }, [open, emailInicial]);
+
   const cerrarYLimpiar = () => {
-    setEmail("");
+    setEmail(emailInicial ?? "");
     setFirstName("");
     setLastName("");
     setSendActivation(false);

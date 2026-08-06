@@ -12,6 +12,7 @@ import {
   FolderOpen,
   GraduationCap,
   LayoutDashboard,
+  UserPlus,
   Undo2,
   Link2,
   Megaphone,
@@ -121,6 +122,13 @@ export const sidebarItems: NavGroup[] = [
         icon: Package,
         iconNormal: "/menu-icons/productos-normal.svg",
         iconActive: "/menu-icons/productos-active.svg",
+      },
+      {
+        // Junto a Reembolsos y Enlaces de pago: las tres son la misma familia
+        // —lo que el cobro automático no pudo resolver— y se usan seguidas.
+        title: "Sin cuenta",
+        url: "/dashboard/compradores-sin-cuenta",
+        icon: UserPlus,
       },
       {
         // Va junto a Pedidos: el dinero ya está devuelto y lo que queda es
