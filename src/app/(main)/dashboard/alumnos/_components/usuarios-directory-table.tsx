@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
-import { Download, Eye, IdCard, Pencil, Search } from "lucide-react";
+import { Download, Eye, IdCard, Pencil, Search, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { BrandTabs } from "@/components/brand-tabs";
@@ -15,6 +15,7 @@ import { CeldaTexto } from "@/components/data-table/celda-texto";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
+import { AltaClienteDialog } from "@/components/modals/alta-cliente-dialog";
 import { EditUserModal } from "@/components/modals/edit-user-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ export function UsuariosDirectoryTable() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [detailUser, setDetailUser] = useState<UsuarioDirectorio | null>(null);
+  const [altaAbierta, setAltaAbierta] = useState(false);
   const [editUser, setEditUser] = useState<UsuarioDirectorio | null>(null);
 
   // Debounce sencillo de la búsqueda (server-side)
@@ -378,6 +380,10 @@ export function UsuariosDirectoryTable() {
                 className="pl-8"
               />
             </div>
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => setAltaAbierta(true)}>
+              <UserPlus className="h-4 w-4" />
+              Dar de alta
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1">
@@ -567,6 +573,8 @@ export function UsuariosDirectoryTable() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AltaClienteDialog open={altaAbierta} onOpenChange={setAltaAbierta} />
     </>
   );
 }
