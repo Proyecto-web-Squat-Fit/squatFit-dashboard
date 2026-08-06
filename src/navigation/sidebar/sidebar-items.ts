@@ -12,6 +12,7 @@ import {
   FolderOpen,
   GraduationCap,
   LayoutDashboard,
+  Undo2,
   Link2,
   Megaphone,
   MessageSquare,
@@ -120,6 +121,14 @@ export const sidebarItems: NavGroup[] = [
         icon: Package,
         iconNormal: "/menu-icons/productos-normal.svg",
         iconActive: "/menu-icons/productos-active.svg",
+      },
+      {
+        // Va junto a Pedidos: el dinero ya está devuelto y lo que queda es
+        // decidir qué pasa con el acceso. Mientras no se decide, el cliente lo
+        // conserva, así que la pantalla no puede estar escondida.
+        title: "Reembolsos",
+        url: "/dashboard/reembolsos",
+        icon: Undo2,
       },
       {
         // Los closers cerraban por llamada buscando el enlace correcto entre
