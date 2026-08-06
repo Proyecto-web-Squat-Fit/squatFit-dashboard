@@ -12,6 +12,7 @@ import {
   FolderOpen,
   GraduationCap,
   LayoutDashboard,
+  Link2,
   Megaphone,
   MessageSquare,
   Package,
@@ -119,6 +120,16 @@ export const sidebarItems: NavGroup[] = [
         icon: Package,
         iconNormal: "/menu-icons/productos-normal.svg",
         iconActive: "/menu-icons/productos-active.svg",
+      },
+      {
+        // Los closers cerraban por llamada buscando el enlace correcto entre
+        // sitios distintos. Va aquí, junto a Pedidos y Usuarios, porque las
+        // tres pantallas se usan seguidas: se manda el enlace, entra el cobro
+        // y —mientras los enlaces no lleven metadata— hay que dar de alta al
+        // cliente a mano.
+        title: "Enlaces de pago",
+        url: "/dashboard/enlaces-pago",
+        icon: Link2,
       },
       {
         title: "Usuarios",
