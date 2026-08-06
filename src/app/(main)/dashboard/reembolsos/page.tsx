@@ -60,8 +60,10 @@ function FilaPendiente({ fila, onResuelta }: { fila: DecisionPendiente; onResuel
       </div>
 
       <p className="text-muted-foreground text-sm">
+        {/* El `resumen` del backend YA nombra el pedido cuando lo hay, así que
+            añadirlo aquí otra vez lo repetía: «Pedido abcdef12 · pedido
+            abcdef12». Visto en el navegador. */}
         {fila.resumen ?? "Sin pedido trazable"}
-        {fila.order_id && ` · pedido ${fila.order_id.slice(0, 8)}`}
         {!fila.user_id && " · no se sabe de qué cliente es"}
       </p>
 
