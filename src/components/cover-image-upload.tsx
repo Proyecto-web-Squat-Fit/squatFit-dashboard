@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { X, Image as ImageIcon } from "lucide-react";
 
+import { PhotoCropDialog } from "@/components/photo-crop-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,15 @@ interface CoverImageUploadProps {
   titulo?: string;
   /** Vista previa redonda, para fotos de perfil. */
   redonda?: boolean;
+  /**
+   * Pasa la imagen elegida por un recorte cuadrado antes de subirla.
+   *
+   * Se activa en las FOTOS DE PERFIL y no en las portadas del catálogo: una
+   * portada de libro es vertical y recortarla a cuadrado la destrozaría. Va en
+   * su propia prop y no colgando de `redonda` para que la forma de la vista
+   * previa y lo que se sube no queden atados sin querer.
+   */
+  conRecorte?: boolean;
   className?: string;
 }
 
@@ -44,10 +54,12 @@ export function CoverImageUpload({
   initialPreviewUrl,
   titulo = "Imagen de portada",
   redonda = false,
+  conRecorte = false,
   className,
 }: CoverImageUploadProps) {
   const [useUrl, setUseUrl] = useState(!!value.url && !value.file);
   const [preview, setPreview] = useState<string | null>(initialPreviewUrl ?? value.url ?? null);
+  const [aRecortar, setARecortar] = useState<File | null>(null);
   const objectUrlRef = useRef<string | null>(null);
 
   // Libera el object URL del archivo anterior para no fugar memoria.
@@ -76,6 +88,15 @@ export function CoverImageUpload({
     onChange({ file, url: "" });
   };
 
+  /** Con recorte, la imagen elegida no se acepta hasta pasar por el diálogo. */
+  const alElegirArchivo = (file: File | null) => {
+    if (conRecorte && file) {
+      setARecortar(file);
+      return;
+    }
+    handleFile(file);
+  };
+
   const handleUrl = (url: string) => {
     setPreview(url || null);
     onChange({ file: null, url });
@@ -89,6 +110,15 @@ export function CoverImageUpload({
 
   return (
     <div className={cn("border-border/70 bg-background space-y-4 rounded-lg border p-4", className)}>
+      <PhotoCropDialog
+        file={aRecortar}
+        onCancel={() => setARecortar(null)}
+        onConfirm={(recortada) => {
+          setARecortar(null);
+          handleFile(recortada);
+        }}
+      />
+
       <p className="text-muted-foreground text-sm font-medium">{titulo}</p>
 
       <div className="flex gap-2">
@@ -124,7 +154,13 @@ export function CoverImageUpload({
             <Input
               type="file"
               accept="image/*"
-              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                alElegirArchivo(e.target.files?.[0] ?? null);
+                // Se limpia para que elegir el MISMO archivo dos veces seguidas
+                // (por ejemplo tras cancelar el recorte) vuelva a disparar el
+                // evento.
+                e.target.value = "";
+              }}
               disabled={disabled}
               className="cursor-pointer"
             />
@@ -138,7 +174,11 @@ export function CoverImageUpload({
             />
           )}
           <p className="text-muted-foreground text-xs">
-            {useUrl ? "URL pública de la imagen." : "Formatos: JPG, PNG, WEBP (máx. 5 MB)."}
+            {useUrl
+              ? "URL pública de la imagen."
+              : conRecorte
+                ? "JPG, PNG o WEBP (máx. 5 MB). Podrás encuadrarla antes de guardar."
+                : "Formatos: JPG, PNG, WEBP (máx. 5 MB)."}
           </p>
         </div>
 

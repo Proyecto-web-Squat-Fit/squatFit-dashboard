@@ -270,6 +270,7 @@ export function EditUserForm({
         <CoverImageUpload
           titulo="Foto de perfil"
           redonda
+          conRecorte
           value={foto}
           onChange={setFoto}
           initialPreviewUrl={defaultValues?.profile_picture ?? null}

@@ -313,6 +313,7 @@ export function PerfilView() {
             <CoverImageUpload
               titulo="Foto de perfil"
               redonda
+              conRecorte
               value={foto}
               onChange={setFoto}
               initialPreviewUrl={fotoGuardada}
