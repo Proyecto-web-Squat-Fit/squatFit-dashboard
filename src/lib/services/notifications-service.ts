@@ -134,6 +134,12 @@ const RUTA_POR_PREFIJO: Map<string, DestinoDePrefijo> = new Map([
   ["leads", () => "/dashboard/leads"],
   ["forms", () => "/dashboard/leads"],
   ["pedidos", () => "/dashboard/pedidos"],
+  // Pantallas nacidas el 6-ago. Sin estas dos entradas, el aviso «Reembolso de
+  // X: decide qué pasa con su acceso» caía en el destino por tipo —
+  // /dashboard/ventas, que es una pantalla en desarrollo— en vez de en la
+  // pantalla hecha para resolverlo. Comprobado siguiendo el enlace.
+  ["reembolsos", () => "/dashboard/reembolsos"],
+  ["compradores-sin-cuenta", () => "/dashboard/compradores-sin-cuenta"],
 ]);
 
 /** Traduce un `cta_url` del backend a una ruta real, o null si no se reconoce. */
