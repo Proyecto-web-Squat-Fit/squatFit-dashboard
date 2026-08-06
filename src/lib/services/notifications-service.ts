@@ -26,6 +26,7 @@ const REQUEST_TIMEOUT = 12000;
 //   • sequra         → pedido seQura         → /dashboard/ventas
 //   • renovacion     → programa que vence    → ficha del cliente
 //   • checkout_caido → nadie puede comprar   → /dashboard/pedidos
+//   • tarea_lead     → tarea de lead vencida → /dashboard/leads
 // El GET devuelve un `cta_url` por notificación, que se traduce a ruta del
 // panel (`rutaDelPanel`); si no se reconoce, se deriva del tipo.
 // ============================================================================
@@ -49,7 +50,7 @@ export const NOTIFICATIONS_POLL_MS = 45_000;
 // Se adopta el vocabulario del backend, que es quien las escribe. Los cuatro
 // nombres viejos se siguen aceptando (ALIAS_LEGADO) para no romper nada que
 // venga con ellos.
-export const NOTIFICATION_TYPES = ["lead_nuevo", "pago", "form", "sequra", "renovacion", "checkout_caido"] as const;
+export const NOTIFICATION_TYPES = ["lead_nuevo", "pago", "form", "sequra", "renovacion", "checkout_caido", "tarea_lead"] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** Nombres que usaba solo el panel, por si llega alguno con ellos. */
@@ -67,6 +68,7 @@ export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   sequra: "Pedido seQura",
   renovacion: "Renovación",
   checkout_caido: "Tienda caída",
+  tarea_lead: "Tarea vencida",
 };
 
 export interface AdminNotification {
@@ -100,6 +102,8 @@ function defaultHref(type: NotificationType, resourceId?: string): string {
       return "/dashboard/alumnos";
     case "checkout_caido":
       return "/dashboard/pedidos";
+    case "tarea_lead":
+      return "/dashboard/leads";
   }
 }
 

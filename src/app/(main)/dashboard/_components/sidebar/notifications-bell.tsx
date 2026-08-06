@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { AlertTriangle, Bell, CalendarClock, ClipboardList, CreditCard, ShoppingBag, UserPlus } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, ClipboardList, CreditCard, ListTodo, ShoppingBag, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +39,7 @@ const TYPE_ICON: Record<NotificationType, typeof Bell> = {
   sequra: ShoppingBag,
   renovacion: CalendarClock,
   checkout_caido: AlertTriangle,
+  tarea_lead: ListTodo,
 };
 
 function readPref(key: string): boolean {
