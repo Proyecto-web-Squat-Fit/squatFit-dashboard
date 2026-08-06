@@ -3,19 +3,31 @@ import { API_BASE_URL } from "@/lib/services/api-base";
 
 import { CursosService } from "./cursos-service";
 import { LibrosService } from "./libros-service";
+import { ProductsService } from "./products-service";
 
 // ============================================================================
 // GRANT PRODUCT
 // ----------------------------------------------------------------------------
 // `POST /api/v1/admin-panel/grant-product` (desplegado 19 jul 2026, lote 3).
-// El DTO del backend valida con forbidNonWhitelisted y SOLO acepta
-// { user_id, product_type: 'course'|'book', product_id } — nada de campos
-// extra (order_id daría 400) ni packs.
+// El DTO del backend valida con forbidNonWhitelisted: nada de campos extra
+// (order_id daría 400).
+//
+// PROGRAMAS, desde el 6-ago-2026 (backend PR #195). Antes el endpoint solo
+// aceptaba 'course'|'book' y aquí no había forma de dar un programa a mano.
+// Eso importaba más de lo que parece: quien paga un programa por un enlace de
+// pago de Stripe no recibe nada —esos enlaces no llevan metadata, así que el
+// webhook no sabe qué conceder—, la campana avisa de que «hay que darle el alta
+// y el acceso a mano», y no se podía. Ahora sí.
+//
+// El backend acepta ya { user_id, product_type: 'course'|'book'|'program',
+// product_id } y, para los programas, un `months` opcional. Al conceder un
+// programa se le da además el curso incluido y, si es Premium, las sesiones en
+// vivo: delega en `grantProgram`, el mismo camino que usa el webhook de Stripe.
 // ============================================================================
 export const GRANT_PRODUCT_ENDPOINT = "/api/v1/admin-panel/grant-product";
 export const GRANT_PRODUCT_AVAILABLE = true;
 
-export type GrantableProductType = "course" | "book" | "pack" | "product";
+export type GrantableProductType = "course" | "book" | "program" | "pack" | "product";
 
 export interface GrantableProduct {
   id: string;
@@ -30,16 +42,22 @@ export interface GrantProductPayload {
   productType: GrantableProductType;
   /** Contexto opcional: id del pedido desde el que se concede. */
   orderId?: string;
+  /** Solo para programas: meses de acceso. Sin él manda el del producto (o 6). */
+  months?: number;
 }
 
 export class GrantProductService {
   /**
-   * Reúne todos los productos concebibles (cursos, libros y packs) en una lista
-   * homogénea para el selector. Tolera que algún catálogo falle (devuelve el
-   * resto). Ordenado por tipo y nombre.
+   * Reúne todo lo que se puede conceder —cursos, libros y programas— en una
+   * lista homogénea para el selector. Tolera que algún catálogo falle (devuelve
+   * el resto). Ordenado por tipo y nombre.
    */
   static async getGrantableProducts(): Promise<GrantableProduct[]> {
-    const [cursos, libros] = await Promise.allSettled([CursosService.getCursos(), LibrosService.getLibros()]);
+    const [cursos, libros, productos] = await Promise.allSettled([
+      CursosService.getCursos(),
+      LibrosService.getLibros(),
+      ProductsService.list(),
+    ]);
 
     const out: GrantableProduct[] = [];
 
@@ -60,7 +78,18 @@ export class GrantProductService {
         });
       }
     }
-    // Los packs quedan fuera: el endpoint grant-product solo admite course|book.
+    // Programas: las filas de `products` con grant_type='program'. Se incluyen
+    // aunque estén INACTIVAS a propósito — hoy los cuatro programas TMV lo
+    // están, y aun así hay clientes pagándolos; `grantProgram` no mira `active`,
+    // y lo que se necesita es poder darles lo que ya han pagado.
+    if (productos.status === "fulfilled") {
+      for (const p of productos.value) {
+        if (p.grantType !== "program") continue;
+        out.push({ id: p.id, name: p.name, type: "program", price: p.price });
+      }
+    }
+
+    // Los packs quedan fuera: el endpoint grant-product no los admite.
 
     return out.sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name));
   }
@@ -87,6 +116,7 @@ export class GrantProductService {
         user_id: payload.userId,
         product_id: payload.productId,
         product_type: payload.productType,
+        ...(payload.productType === "program" && payload.months ? { months: payload.months } : {}),
         // payload.orderId es solo contexto de UI: el DTO del backend
         // (forbidNonWhitelisted) rechaza cualquier campo extra.
       }),

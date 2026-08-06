@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 const TYPE_LABEL: Record<GrantableProductType, string> = {
   course: "Curso",
   book: "Libro",
+  program: "Programa",
   pack: "Pack",
   product: "Producto",
 };
@@ -166,6 +167,16 @@ export function GrantProductDialog({ open, onOpenChange, userId, userName, order
             <p className="text-muted-foreground text-sm">
               Se asignará <span className="text-foreground font-medium">{selected.name}</span> (
               {TYPE_LABEL[selected.type].toLowerCase()}).
+              {/* Un programa concede MÁS que lo que dice su nombre, y quien pulsa
+                  debería saberlo antes de pulsar: además de «Mi programa» entra
+                  el curso incluido y, si es Premium, las sesiones en vivo. */}
+              {selected.type === "program" && (
+                <>
+                  {" "}
+                  Le dará acceso a «Mi programa», al curso que incluye y —si es Premium— a las sesiones
+                  en vivo. La duración sale del propio producto (6 meses si no la trae).
+                </>
+              )}
             </p>
           )}
         </div>
