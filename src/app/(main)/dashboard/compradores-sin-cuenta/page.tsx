@@ -96,10 +96,21 @@ export default function CompradoresSinCuentaPage() {
           <AlertTriangle className="size-4" />
           <AlertTitle>
             {datos.sin_cuenta} cobros por {enEuros(datos.importe_total, "EUR")} sin cuenta
+            {/* Cobros ≠ personas: quien paga a plazos sale una vez por plazo.
+                El 7-ago eran 19 cobros de 12 personas, con un correo repetido
+                cuatro veces. Sin decirlo, se da de alta a la misma persona
+                cuatro veces. Solo se añade si el backend lo manda: mientras no
+                esté desplegado, llega undefined y esto no se pinta. */}
+            {typeof datos.personas === "number" && datos.personas !== datos.sin_cuenta && (
+              <> · son {datos.personas} personas</>
+            )}
           </AlertTitle>
           <AlertDescription>
             De {datos.cobros_mirados} cobros de los últimos {datos.dias} días. Esta gente ha pagado y no puede entrar:
             hay que darle de alta y concederle lo que compró desde su ficha.
+            {typeof datos.personas === "number" && datos.personas !== datos.sin_cuenta && (
+              <> Ojo: hay correos repetidos, porque quien paga a plazos sale una vez por plazo. Dale de alta una sola vez.</>
+            )}
           </AlertDescription>
         </Alert>
       )}
