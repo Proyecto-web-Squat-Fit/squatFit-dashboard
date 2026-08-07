@@ -34,7 +34,16 @@ export interface CompradorSinCuenta {
 export interface ResumenCompradoresSinCuenta {
   dias: number;
   cobros_mirados: number;
+  /** Cobros sin cuenta. NO son personas: ver `personas`. */
   sin_cuenta: number;
+  /**
+   * Personas distintas detrás de esos cobros.
+   *
+   * Opcional porque el backend que lo devuelve es más nuevo que esta pantalla:
+   * mientras no esté desplegado llega `undefined` y se enseña solo el número de
+   * cobros, como hasta ahora, en vez de un «de undefined personas».
+   */
+  personas?: number;
   importe_total: number;
   compradores: CompradorSinCuenta[];
 }
