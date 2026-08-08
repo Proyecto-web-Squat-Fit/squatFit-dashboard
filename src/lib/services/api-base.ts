@@ -14,7 +14,12 @@
  * los dos es el bueno, y en una revisión de código las dos formas parecen dos
  * backends distintos.
  *
- * El valor por defecto es el que `gcloud run services describe` da como URL
- * oficial del servicio.
+ * DESDE EL 8-ago-2026 el valor por defecto es api.squadfit.es, que es un Worker
+ * de Cloudflare que reescribe la cabecera `Host` hacia Cloud Run. Hizo falta un
+ * Worker y no una regla porque el «Host Header Override» no existe en el plan
+ * Free — y sin reescribir el Host, Cloud Run devuelve 404 porque no reconoce el
+ * dominio.
+ *
+ * La URL de run.app sigue funcionando igual; simplemente ya no se nombra aquí.
  */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://squatfit-api-cyrc2g3zra-no.a.run.app";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.squadfit.es";
